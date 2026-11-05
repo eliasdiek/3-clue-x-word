@@ -45,3 +45,8 @@ next-env.d.ts
 /playwright-report/
 /supabase/.temp/
 /src/lib/supabase/database.generated.ts
+
+# client materials (kept locally, not in the repository)
+/Design/
+/Prompt/
+/Resources/
