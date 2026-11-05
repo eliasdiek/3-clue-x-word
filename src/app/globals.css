@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/*
+ * 3-Clue X-Word theme tokens. Every brand colour lives here so it can be
+ * adjusted in one place (the hex values are design starting points).
+ * Usage: bg-navy, text-ink, border-line, bg-harder, etc.
+ */
+@theme {
+  /* Navigation & actions */
+  --color-navy: #1d2d59;
+  --color-navy-deep: #16234a;
+  --color-navy-soft: #2b3d72;
+  --color-brand: #6426cc;
+  --color-brand-hover: #5520b0;
+  --color-brand-soft: #efe8fc;
+  --color-brand-ring: #a98be6;
+
+  /* Clue levels (see src/lib/constants/game.ts for the level mapping) */
+  --color-harder: #ffe58a;
+  --color-harder-strong: #f0c94a;
+  --color-harder-ink: #614600;
+  --color-medium: #f8c7e6;
+  --color-medium-strong: #e59bcb;
+  --color-medium-ink: #7a1f5c;
+  --color-easier: #bbdfff;
+  --color-easier-strong: #7dbcf3;
+  --color-easier-ink: #0f4a80;
+
+  /* Surfaces & text */
+  --color-canvas: #f7f8ff;
+  --color-surface: #ffffff;
+  --color-ink: #17204d;
+  --color-ink-muted: #545d8a;
+  --color-line: #e2e4f4;
+  --color-line-strong: #c9cce6;
+
+  /* Status */
+  --color-success: #d8f5df;
+  --color-success-ink: #1b6532;
+  --color-warning: #fff0c7;
+  --color-warning-ink: #6f5000;
+  --color-danger: #fde6e6;
+  --color-danger-ink: #a61e1e;
+  --color-danger-strong: #c92a2a;
+  --color-info: #e6f1ff;
+  --color-info-ink: #1d4f91;
+
+  /* Typography: a rounded, readable sans for the interface; Arial Rounded
+     (from the original spec) is preferred for crossword letters when the
+     viewer has it installed, with Nunito as the free fallback. */
+  --font-sans: var(--font-nunito), ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-grid: "Arial Rounded MT Bold", var(--font-nunito), ui-rounded, system-ui, sans-serif;
+  /* The specification asks for plain Arial for the small clue numbers. */
+  --font-grid-number: Arial, Helvetica, sans-serif;
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(23 32 77 / 0.04), 0 10px 28px -14px rgb(23 32 77 / 0.18);
+  --shadow-pop: 0 18px 50px -12px rgb(23 32 77 / 0.28);
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Clear, consistent keyboard focus everywhere. */
+:focus-visible {
+  outline: 3px solid var(--color-brand-ring);
+  outline-offset: 2px;
+}
+
+dialog::backdrop {
+  background: rgb(23 32 77 / 0.45);
+}
+
+/* ---------------------------------------------------------------------------
+   Loading states: calm and steady rather than busy.
+   --------------------------------------------------------------------------- */
+
+/* A steady spin; fast spins read as frantic. */
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  animation: spinner-rotate 1.1s linear infinite;
+  transform-origin: center;
+}
+
+/* Skeleton placeholders breathe gently instead of blinking. */
+@keyframes skeleton-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.skeleton-pulse {
+  animation: skeleton-breathe 1.8s ease-in-out infinite;
+}
+
+/* Loading indicators wait briefly before fading in, so quick loads never
+   flash a spinner on and off. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in-delayed {
+  animation: fade-in 300ms ease-out 350ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* Keep a slow, gentle spin so loading is still visible. */
+  .spinner {
+    animation-duration: 2.4s !important;
+  }
+  .skeleton-pulse {
+    animation: none !important;
+  }
+}
