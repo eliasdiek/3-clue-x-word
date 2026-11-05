@@ -15,8 +15,8 @@ React Hook Form + Zod · Vitest + Testing Library · Playwright.
 | 1 | Project setup, Supabase integration, theme, shared components | ✅ Done |
 | 2 | Database schema, migrations, RLS, publish function | ✅ Done (tested on PGlite) |
 | 3 | Admin login, password reset, protected layout | ✅ Done |
-| 4 | Dashboard puzzle list (search, filters, pagination, actions) | Summary cards done; list next |
-| 5 | 12×12 grid editor + word extraction engine | Not started |
+| 4 | Dashboard puzzle list (search, filters, pagination, actions) | Simple list done; search, filters and actions next |
+| 5 | 12×12 grid editor + word extraction engine | ✅ Done |
 | 6 | Clue editor | Not started |
 | 7 | Clue dictionary | Not started |
 | 8 | Review & publish | Database side done; UI not started |
@@ -124,6 +124,20 @@ scripts/create-admin.ts
 | `daily_quotes` | Quote of the day for the app's opening screen |
 
 `puzzle_summaries` is a view that powers the dashboard with real counts.
+
+**Grid editor ("Done").** John types letters on a white board, and drafts are
+saved automatically. `src/lib/puzzle/grid.ts` numbers squares by the
+specification's rule and lists the words, across first and then down.
+`finish_puzzle_grid()` then re-checks that word list against the grid on the
+server (complete runs, nothing missing, correct numbering). It stores black
+squares and replaces the words. Clues are carried over to words that are still
+present, even if they moved, and the editor warns before any clues would be
+lost. Editing the grid again clears the "finished" mark until Done is clicked
+again.
+
+**Applying new migrations.** Each build step may add a file to
+`supabase/migrations/`. Run `npm run db:push`, or paste the new file into the
+Supabase SQL Editor.
 
 **Publishing policy.** `publish_puzzle()` is the only way to publish. In one
 transaction it re-checks the admin, locks the puzzle, refuses stale or

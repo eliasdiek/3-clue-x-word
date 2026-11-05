@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Grid3x3, Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
@@ -69,7 +70,11 @@ async function DashboardContent() {
         </Card>
       ) : (
         <Alert tone="info">
-          The searchable puzzle list (open, preview, duplicate, archive) arrives in the next build step.
+          Open your puzzles from the{" "}
+          <Link href="/puzzles" className="underline underline-offset-2">
+            Puzzle List
+          </Link>
+          .
         </Alert>
       )}
 

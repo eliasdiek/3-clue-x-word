@@ -200,6 +200,10 @@ export type Database = {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       current_admin_id: { Args: Record<string, never>; Returns: string | null };
       next_puzzle_number: { Args: Record<string, never>; Returns: number | null };
+      finish_puzzle_grid: {
+        Args: { p_puzzle_id: string; p_grid: Json; p_words: Json; p_expected_updated_at: string | null };
+        Returns: { word_count: number; kept_clue_count: number; dropped_clue_count: number; updated_at: string }[];
+      };
       publish_puzzle: {
         Args: { p_puzzle_id: string; p_payload: Json; p_expected_updated_at: string | null };
         Returns: { puzzle_number: number; publication_version: number; published_at: string }[];

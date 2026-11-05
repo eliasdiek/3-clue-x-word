@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
-import { UpcomingFeature } from "@/components/ui/upcoming-feature";
+import { GridEditor } from "@/components/puzzle/grid-editor";
+import { emptyGrid } from "@/lib/puzzle/grid";
 
 export const metadata: Metadata = { title: "Create Puzzle" };
 
+/**
+ * A clean white board. Nothing is stored until the first letter is typed;
+ * the editor then creates the draft and switches the address to its own page.
+ * Every save goes through Server Actions that verify the administrator.
+ */
 export default function NewPuzzlePage() {
   return (
-    <UpcomingFeature
-      title="Create Puzzle"
-      step={5}
-      summary="The 12×12 grid editor with automatic word detection and clue numbering."
+    <GridEditor
+      initial={{
+        puzzleId: null,
+        puzzleNumber: null,
+        status: "draft",
+        grid: emptyGrid(),
+        finished: false,
+        updatedAt: null,
+        wordsWithClues: [],
+      }}
     />
   );
 }

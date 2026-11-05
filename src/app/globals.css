@@ -34,6 +34,10 @@
   --color-line: #e2e4f4;
   --color-line-strong: #c9cce6;
 
+  /* Crossword board */
+  --color-block: #151a33; /* black squares */
+  --color-grid-line: #9aa0c8;
+
   /* Status */
   --color-success: #d8f5df;
   --color-success-ink: #1b6532;
