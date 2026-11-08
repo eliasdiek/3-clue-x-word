@@ -554,8 +554,8 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
           </>
         ) : null}
         {mode === "locked" && puzzleId ? (
-          <ButtonLink href={`/puzzles/${puzzleId}/clues`} variant="secondary" size="lg">
-            View Clues
+          <ButtonLink href={`/puzzles/${puzzleId}/review`} size="lg">
+            View Published Puzzle
           </ButtonLink>
         ) : null}
       </div>

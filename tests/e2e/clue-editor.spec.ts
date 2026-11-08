@@ -48,4 +48,27 @@ test("add clues, see the report, and finish", async ({ page }) => {
   await page.reload();
   await expect(clue(page, "Easier", "1d COW")).toHaveValue("Farm animal");
   await expect(page.getByText("2 / 2")).toBeVisible();
+
+  // Review shows everything and is ready to publish (but don't publish here).
+  await page.getByRole("link", { name: "Next: Review & Publish" }).click();
+  await expect(page.getByText("This puzzle is ready to publish")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish Puzzle" })).toBeEnabled();
+});
+
+/**
+ * Publishing uses up the next real puzzle number, and numbers never go back.
+ * Only run this against a test database: set E2E_ALLOW_PUBLISH=1.
+ */
+test("publish a reviewed puzzle", async ({ page }) => {
+  test.skip(process.env.E2E_ALLOW_PUBLISH !== "1", "Set E2E_ALLOW_PUBLISH=1 (test databases only)");
+  await logIn(page, "/puzzles");
+  const readyRow = page.getByRole("row").filter({ hasText: "Ready to publish" }).first();
+  await readyRow.getByRole("link", { name: /^Open/ }).click();
+  await page.getByRole("link", { name: "Next: Review & Publish" }).click();
+  await page.getByRole("button", { name: "Publish Puzzle" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText(/Published as puzzle #\d+/).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: /^Puzzle #\d+$/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish Puzzle" })).toHaveCount(0);
 });

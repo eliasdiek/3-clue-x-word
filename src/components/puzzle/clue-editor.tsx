@@ -190,11 +190,16 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
 
   const title = initial.puzzleNumber ? `Puzzle #${initial.puzzleNumber}` : "Draft Puzzle";
   const gridHref = `/puzzles/${initial.puzzleId}/grid`;
+  const reviewHref = `/puzzles/${initial.puzzleId}/review`;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={title} description="Clue editor: add a Harder, Medium and Easier clue for every word." />
-      <PuzzleSteps current={2} completed={ready ? 2 : 1} links={{ 1: gridHref }} />
+      <PuzzleSteps
+        current={2}
+        completed={ready || locked ? 2 : 1}
+        links={{ 1: gridHref, ...(ready || locked ? { 3: reviewHref } : {}) }}
+      />
 
       {!initial.gridFinished && !locked ? (
         <Alert tone="warning">
@@ -322,15 +327,12 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
             Done / Check Clues
           </Button>
         ) : null}
-        {ready && !locked ? (
-          <Button size="lg" disabled icon={<ArrowRight aria-hidden className="size-5" />} title="Review & Publish arrives in build step 8">
-            Next: Review &amp; Publish
-          </Button>
+        {(ready || locked) && save.state !== "unsaved" && save.state !== "saving" ? (
+          <ButtonLink href={reviewHref} size="lg" icon={<ArrowRight aria-hidden className="size-5" />}>
+            {locked ? "View Published Puzzle" : "Next: Review & Publish"}
+          </ButtonLink>
         ) : null}
       </div>
-      {ready && !locked ? (
-        <p className="-mt-3 text-right text-sm text-ink-muted">Review &amp; Publish arrives in build step 8.</p>
-      ) : null}
     </div>
   );
 }

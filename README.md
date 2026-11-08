@@ -19,7 +19,7 @@ React Hook Form + Zod · Vitest + Testing Library · Playwright.
 | 5 | 12×12 grid editor + word extraction engine | ✅ Done |
 | 6 | Clue editor | ✅ Done |
 | 7 | Clue dictionary | Not started |
-| 8 | Review & publish | Database side done; UI not started |
+| 8 | Review & publish | ✅ Done |
 | 9 | Mobile delivery API + Daily Quotes page | Not started (tables and RLS in place; menu item added) |
 | 10 | Hardening, docs, deployment | Not started |
 
@@ -144,6 +144,29 @@ published. Clue sets used for the same word in earlier published puzzles are
 offered as "Previous clues". The clue list's **Done** gives the
 specification's report ("All words are present and have 3 clues", or "Word 4d,
 SASH has no clues") and marks a complete puzzle ready to publish.
+
+**Review & publish.** `/puzzles/[id]/review` shows the finished grid with its
+answers and numbers, a summary, and every clue. Its checks
+(`validateForPublish`) are the same ones the Publish Server Action runs on the
+server against the stored puzzle:
+- the grid is finished and 12×12;
+- the stored word list exactly matches the grid (answers, start squares,
+  numbering, cells);
+- every word has three clues within the length limit.
+
+Publishing is refused if the puzzle changed after the review page was opened.
+`publish_puzzle()` then allocates the next number and stores the snapshot
+built by `buildPublishedPayload()` (schema `v1`: solution rows, black squares,
+numbered squares, across/down words with `1a` labels, `R01C05` start squares,
+cells and three clues, scoring rules, and the maximum score).
+
+The snapshot includes the answers so the app can check letters offline.
+Anyone who inspects a downloaded puzzle can read them. That's an accepted
+limitation for a free puzzle game, not something the app can prevent.
+
+The publish browser test only runs with `E2E_ALLOW_PUBLISH=1`, because every
+publish uses up a real, permanent puzzle number. Run it only against a test
+database.
 
 **Applying new migrations.** Each build step may add a file to
 `supabase/migrations/`. Run `npm run db:push`, or paste the new file into the

@@ -120,7 +120,7 @@ describe("ClueEditor", () => {
     await user.click(screen.getByRole("button", { name: "Done / Check Clues" }));
     const alert = await screen.findByRole("alert");
     expect(within(alert).getByText("Word 1d, COW has no clues")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Next: Review/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Next: Review/ })).toBeNull();
   });
 
   it("confirms a complete puzzle and offers the next step", async () => {
@@ -129,7 +129,10 @@ describe("ClueEditor", () => {
     render(<ClueEditor initial={INITIAL} />);
     await user.click(screen.getByRole("button", { name: "Done / Check Clues" }));
     expect(await screen.findByText("All words are present and have 3 clues")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Next: Review/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Next: Review/ })).toHaveAttribute(
+      "href",
+      "/puzzles/33333333-3333-4333-8333-333333333333/review",
+    );
   });
 
   it("filters to the words that still need clues", async () => {
