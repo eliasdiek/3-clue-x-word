@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.generated.ts",
     "db:push": "supabase db push",
-    "admin:create": "tsx scripts/create-admin.ts"
+    "admin:create": "tsx scripts/create-admin.ts",
+    "seed:test": "tsx scripts/seed-test-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.2",

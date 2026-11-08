@@ -64,6 +64,7 @@ instead of crashing.
 | `npm run db:push` | Apply migrations to the linked Supabase project |
 | `npm run db:types` | Generate DB types into `database.generated.ts` |
 | `npm run admin:create` | Create or promote an administrator |
+| `npm run seed:test` | Add `[TEST]` puzzles (one at each stage) and a week of test quotes; `-- --clean` removes them. Never publishes |
 
 ## Architecture
 
@@ -234,7 +235,17 @@ Needs the product owner's decision (all Phase 2 app behaviour except 3):
 
 ## Windows note
 
-If `next build` fails with `EBUSY: resource busy or locked` inside `.next`,
-something on the PC (usually antivirus real-time scanning) is locking freshly
-written files. Exclude the project folder from scanning, or build from
-another drive.
+If `npm run dev` or `npm run build` fails with `EBUSY: resource busy or
+locked` or `os error 32 … being used by another process` inside `.next`,
+Windows Defender is scanning each file Next.js writes before it can be
+renamed. Exclude the project folder: open **PowerShell as Administrator** and
+run
+
+```powershell
+Add-MpPreference -ExclusionPath "G:\Projects\3-clue x-word"
+```
+
+(or Windows Security → Virus & threat protection → Manage settings →
+Exclusions → Add a folder). Then delete the `.next` folder and start again.
+Disabling Turbopack's disk cache does not help, because the dev server
+renames other files in `.next` too.
