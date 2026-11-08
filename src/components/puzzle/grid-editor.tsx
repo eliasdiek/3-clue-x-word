@@ -33,12 +33,13 @@ import {
   type GridWord,
 } from "@/lib/puzzle/grid";
 import type { PuzzleStatus, WordDirection } from "@/lib/supabase/database.types";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, PageHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CrosswordBoard } from "./crossword-board";
+import { InfoCard, SaveStatus, type SaveState } from "./editor-status";
 import { PuzzleSteps } from "./puzzle-steps";
 import { WordList } from "./word-list";
 
@@ -57,12 +58,6 @@ export type GridEditorInitial = {
 };
 
 type Mode = "editing" | "finished" | "locked";
-type SaveState =
-  | { state: "idle" }
-  | { state: "unsaved" }
-  | { state: "saving" }
-  | { state: "saved"; at: Date }
-  | { state: "error"; message: string; blocking: boolean };
 type Position = { row: number; column: number };
 
 const AUTOSAVE_DELAY_MS = 1200;
@@ -362,7 +357,11 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={title} description="Crossword grid editor" />
-      <PuzzleSteps current={1} completed={mode === "editing" ? 0 : 1} />
+      <PuzzleSteps
+        current={1}
+        completed={mode === "editing" ? 0 : 1}
+        links={mode !== "editing" && puzzleId ? { 2: `/puzzles/${puzzleId}/clues` } : undefined}
+      />
 
       {save.state === "error" ? (
         <Alert tone="error">
@@ -503,7 +502,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
             {mode === "locked" ? "Published (locked)" : mode === "finished" ? "Grid finished" : "Building the grid"}
           </InfoCard>
           <InfoCard icon={Clock3} tone="info" label="Saving">
-            <SaveStatus save={save} hasPuzzle={Boolean(puzzleId)} />
+            <SaveStatus save={save} idleText={puzzleId ? "Saved" : "Starts saving when you type"} />
           </InfoCard>
 
           {mode === "editing" ? (
@@ -547,15 +546,19 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
             <Button variant="secondary" size="lg" icon={<RotateCcw aria-hidden className="size-5" />} onClick={editGridAgain}>
               Edit Grid
             </Button>
-            <Button size="lg" disabled title="The clue editor arrives in build step 6">
-              Next: Add Clues
-            </Button>
+            {puzzleId ? (
+              <ButtonLink href={`/puzzles/${puzzleId}/clues`} size="lg" icon={<ArrowRight aria-hidden className="size-5" />}>
+                Next: Add Clues
+              </ButtonLink>
+            ) : null}
           </>
         ) : null}
+        {mode === "locked" && puzzleId ? (
+          <ButtonLink href={`/puzzles/${puzzleId}/clues`} variant="secondary" size="lg">
+            View Clues
+          </ButtonLink>
+        ) : null}
       </div>
-      {mode === "finished" ? (
-        <p className="-mt-3 text-right text-sm text-ink-muted">The clue editor arrives in build step 6.</p>
-      ) : null}
 
       {mode !== "editing" && analysis.words.length ? (
         <Card className="p-5 sm:p-6">
@@ -599,46 +602,3 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
   );
 }
 
-function SaveStatus({ save, hasPuzzle }: { save: SaveState; hasPuzzle: boolean }) {
-  switch (save.state) {
-    case "saving":
-      return <>Saving…</>;
-    case "unsaved":
-      return <>Unsaved changes…</>;
-    case "error":
-      return <span className="text-danger-ink">Not saved</span>;
-    case "saved":
-      // Formatted in the viewer's time zone, which can differ from the server's.
-      return <time suppressHydrationWarning>Saved {formatDateTime(save.at)}</time>;
-    default:
-      return <>{hasPuzzle ? "Saved" : "Starts saving when you type"}</>;
-  }
-}
-
-const INFO_TONES = {
-  brand: "bg-brand-soft/60 border-brand/15 text-brand",
-  warning: "bg-warning/70 border-warning-ink/15 text-warning-ink",
-  info: "bg-easier/40 border-easier-ink/15 text-easier-ink",
-} as const;
-
-function InfoCard({
-  icon: Icon,
-  tone,
-  label,
-  children,
-}: {
-  icon: typeof Hash;
-  tone: keyof typeof INFO_TONES;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={cn("flex items-center gap-4 rounded-card border p-4", INFO_TONES[tone])}>
-      <Icon aria-hidden className="size-8 shrink-0" />
-      <div>
-        <p className="text-sm font-semibold text-ink-muted">{label}</p>
-        <p className="text-lg font-bold text-navy">{children}</p>
-      </div>
-    </div>
-  );
-}

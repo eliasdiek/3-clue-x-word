@@ -99,7 +99,10 @@ async function PuzzleRows() {
                 </td>
                 <td className="px-5 py-3 text-ink-muted">{formatDateTime(row.updated_at)}</td>
                 <td className="px-5 py-3 text-right">
-                  <Link href={`/puzzles/${row.id}/grid`} className="font-bold text-brand underline-offset-2 hover:underline">
+                  <Link
+                    href={`/puzzles/${row.id}/${row.grid_finalized_at ? "clues" : "grid"}`}
+                    className="font-bold text-brand underline-offset-2 hover:underline"
+                  >
                     Open<span className="sr-only"> puzzle {row.puzzle_number ?? "draft"}</span>
                   </Link>
                 </td>

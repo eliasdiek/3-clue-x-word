@@ -54,7 +54,9 @@ export function CrosswordBoard({
         ))}
       </div>
 
-      <div className="relative">
+      {/* A size container: letters and numbers scale with the board itself
+          (cqw = 1% of the board's width), so small boards stay legible. */}
+      <div className="@container relative">
         <div
           role="grid"
           aria-label={label}
@@ -91,20 +93,20 @@ export function CrosswordBoard({
                         : state.problem
                           ? "bg-danger"
                           : state.highlighted
-                            ? "bg-brand-soft"
+                            ? "bg-word-highlight"
                             : "bg-surface",
                       onCellPointerDown && !black && "cursor-pointer",
                     )}
                   >
                     {number ? (
-                      <span className="absolute top-0.5 left-0.5 font-grid-number text-[clamp(0.5rem,1.3vw,0.72rem)] leading-none font-bold text-ink">
+                      <span className="absolute top-[0.3cqw] left-[0.4cqw] font-grid-number text-[max(0.45rem,1.8cqw)] leading-none font-bold text-ink">
                         {number}
                       </span>
                     ) : null}
                     {letter ? (
                       <span
                         className={cn(
-                          "font-grid text-[clamp(0.95rem,3.6vw,1.75rem)] leading-none font-bold",
+                          "font-grid pt-[0.6cqw] text-[4.4cqw] leading-none font-bold",
                           state.problem ? "text-danger-ink" : "text-ink",
                         )}
                       >

@@ -204,6 +204,10 @@ export type Database = {
         Args: { p_puzzle_id: string; p_grid: Json; p_words: Json; p_expected_updated_at: string | null };
         Returns: { word_count: number; kept_clue_count: number; dropped_clue_count: number; updated_at: string }[];
       };
+      save_puzzle_clues: {
+        Args: { p_puzzle_id: string; p_clues: Json };
+        Returns: { updated_at: string; word_count: number; completed_count: number }[];
+      };
       publish_puzzle: {
         Args: { p_puzzle_id: string; p_payload: Json; p_expected_updated_at: string | null };
         Returns: { puzzle_number: number; publication_version: number; published_at: string }[];

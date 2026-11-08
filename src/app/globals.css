@@ -37,6 +37,7 @@
   /* Crossword board */
   --color-block: #151a33; /* black squares */
   --color-grid-line: #9aa0c8;
+  --color-word-highlight: #dccdf6; /* the word being worked on */
 
   /* Status */
   --color-success: #d8f5df;

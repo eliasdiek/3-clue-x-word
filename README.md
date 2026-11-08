@@ -17,7 +17,7 @@ React Hook Form + Zod · Vitest + Testing Library · Playwright.
 | 3 | Admin login, password reset, protected layout | ✅ Done |
 | 4 | Dashboard puzzle list (search, filters, pagination, actions) | Simple list done; search, filters and actions next |
 | 5 | 12×12 grid editor + word extraction engine | ✅ Done |
-| 6 | Clue editor | Not started |
+| 6 | Clue editor | ✅ Done |
 | 7 | Clue dictionary | Not started |
 | 8 | Review & publish | Database side done; UI not started |
 | 9 | Mobile delivery API + Daily Quotes page | Not started (tables and RLS in place; menu item added) |
@@ -134,6 +134,16 @@ squares and replaces the words. Clues are carried over to words that are still
 present, even if they moved, and the editor warns before any clues would be
 lost. Editing the grid again clears the "finished" mark until Done is clicked
 again.
+
+**Clue editor.** After Done, each word gets a Harder (yellow, 7 points),
+Medium (pink, 5) and Easier (blue, 3) clue box, labelled `1a`, `3d` as in the
+specification. Each box has a live counter up to `NEXT_PUBLIC_CLUE_MAX_LENGTH`
+(50). Clues are saved automatically in batches by `save_puzzle_clues()`, which
+also marks the puzzle as changed, so a review that has gone stale can't be
+published. Clue sets used for the same word in earlier published puzzles are
+offered as "Previous clues". The clue list's **Done** gives the
+specification's report ("All words are present and have 3 clues", or "Word 4d,
+SASH has no clues") and marks a complete puzzle ready to publish.
 
 **Applying new migrations.** Each build step may add a file to
 `supabase/migrations/`. Run `npm run db:push`, or paste the new file into the
