@@ -147,6 +147,21 @@ export type PuzzleSummaryRow = {
   grid_finalized_at: Timestamp | null;
   word_count: number;
   completed_clue_count: number;
+  stage: PuzzleStage;
+  archived_at: Timestamp | null;
+};
+
+/** Where a puzzle is in the workflow (puzzle_summaries.stage). */
+export type PuzzleStage = "grid" | "clues" | "ready" | "published" | "archived";
+
+export type DictionaryWordSummaryRow = {
+  id: string;
+  normalized_word: string;
+  word_length: number;
+  clue_set_count: number;
+  usage_count: number;
+  last_used_at: Timestamp | null;
+  created_at: Timestamp;
 };
 
 export type Database = {
@@ -195,6 +210,7 @@ export type Database = {
     };
     Views: {
       puzzle_summaries: { Row: PuzzleSummaryRow; Relationships: [] };
+      dictionary_word_summaries: { Row: DictionaryWordSummaryRow; Relationships: [] };
     };
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
@@ -204,6 +220,9 @@ export type Database = {
         Args: { p_puzzle_id: string; p_grid: Json; p_words: Json; p_expected_updated_at: string | null };
         Returns: { word_count: number; kept_clue_count: number; dropped_clue_count: number; updated_at: string }[];
       };
+      archive_puzzle: { Args: { p_puzzle_id: string }; Returns: undefined };
+      restore_puzzle: { Args: { p_puzzle_id: string }; Returns: undefined };
+      duplicate_puzzle: { Args: { p_puzzle_id: string }; Returns: string };
       save_puzzle_clues: {
         Args: { p_puzzle_id: string; p_clues: Json };
         Returns: { updated_at: string; word_count: number; completed_count: number }[];

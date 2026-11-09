@@ -15,13 +15,13 @@ React Hook Form + Zod · Vitest + Testing Library · Playwright.
 | 1 | Project setup, Supabase integration, theme, shared components | ✅ Done |
 | 2 | Database schema, migrations, RLS, publish function | ✅ Done (tested on PGlite) |
 | 3 | Admin login, password reset, protected layout | ✅ Done |
-| 4 | Dashboard puzzle list (search, filters, pagination, actions) | Simple list done; search, filters and actions next |
+| 4 | Puzzle list (search, filters, pagination, actions) | ✅ Done |
 | 5 | 12×12 grid editor + word extraction engine | ✅ Done |
 | 6 | Clue editor | ✅ Done |
-| 7 | Clue dictionary | Not started |
+| 7 | Clue dictionary | ✅ Done |
 | 8 | Review & publish | ✅ Done |
-| 9 | Mobile delivery API + Daily Quotes page | Not started (tables and RLS in place; menu item added) |
-| 10 | Hardening, docs, deployment | Not started |
+| 9 | Mobile delivery API + Daily Quotes page | ✅ Done |
+| 10 | Hardening, docs, deployment | ✅ Done (deploy steps below) |
 
 ## Getting started
 
@@ -52,6 +52,32 @@ React Hook Form + Zod · Vitest + Testing Library · Playwright.
 Without `.env.local`, every page shows a "connect the database" message
 instead of crashing.
 
+## Deploying to Vercel
+
+1. Push the repository to GitHub, then in Vercel choose **Add New → Project →
+   Import**. Vercel detects Next.js, so leave the build settings alone.
+2. Add these **Environment Variables** (Production and Preview):
+
+   | Name | Value |
+   | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the `sb_publishable_…` key |
+   | `NEXT_PUBLIC_SITE_URL` | the site's address, e.g. `https://3clue.vercel.app` (no trailing slash) |
+   | `NEXT_PUBLIC_CLUE_MAX_LENGTH` | optional, default `50` |
+   | `NEXT_PUBLIC_ADMIN_TIME_ZONE` | optional, default `Australia/Brisbane` |
+
+   **Never add `SUPABASE_SERVICE_ROLE_KEY` to Vercel.** Only the local
+   scripts use it. `NEXT_PUBLIC_*` values are built into the site, so
+   **redeploy** after changing one.
+3. Apply every file in `supabase/migrations/` to the Supabase project, in
+   name order (`npm run db:push`, or paste each into the SQL Editor).
+4. In Supabase → Authentication → URL Configuration, set the **Site URL** to
+   the Vercel address and add `<site>/auth/confirm` to **Redirect URLs**.
+   Paste `supabase/templates/recovery.html` into the **Reset Password** email
+   template.
+5. Smoke test: log in, open each menu item, and fetch
+   `<site>/api/v1/puzzles` (it should return `{"apiVersion":"v1","puzzles":[…]}`).
+
 ## Scripts
 
 | Command | What it does |
@@ -73,7 +99,7 @@ Browser ──▶ proxy.ts (refresh session, optimistic redirects)
         ──▶ (admin) layout ── AdminGate: requireAdmin() on the server
                  └─ pages / server actions ── Supabase (as the signed-in user)
                                                   └─ Row Level Security: is_admin()
-Mobile app ──▶ /api/* (Step 9) ── Supabase anon role ── RLS: live snapshots only
+Mobile app ──▶ /api/v1/* ── Supabase anon role ── RLS: live snapshots and released quotes only
 ```
 
 Security has three independent layers. The proxy only does convenience
@@ -88,12 +114,17 @@ service-role key.
 src/
   app/
     (auth)/login, forgot-password, reset-password   sign-in screens
-    (admin)/dashboard, puzzles, dictionary, settings protected admin pages
+    (admin)/dashboard, puzzles, puzzles/[id]/grid|clues|review,
+            dictionary, quotes, settings             protected admin pages
+    api/v1/puzzles, puzzles/next, puzzles/[number],
+           quotes/today                              public mobile API
     auth/confirm/route.ts                            email-link landing
     setup-required/                                  missing-config page
-  components/  ui/ (buttons, fields, dialogs) · layout/ · auth/ · dashboard/
+  components/  ui/ · layout/ · auth/ · dashboard/ · puzzle/ · dictionary/ · quotes/
   lib/
     auth/        dal.ts (requireAdmin), actions.ts, routes.ts, messages.ts
+    puzzle/      grid.ts (engine), format.ts, publish.ts, stages.ts, *-actions.ts
+    dictionary/  quotes/  api/   actions and helpers per area
     supabase/    server / proxy / public clients, database types
     constants/   game.ts (grid size, clue levels, scoring, colours)
     validation/  shared Zod schemas
@@ -105,7 +136,7 @@ tests/
   unit/          pure logic and React components
   integration/   real migrations on in-process Postgres (PGlite)
   e2e/           Playwright
-scripts/create-admin.ts
+scripts/create-admin.ts, seed-test-data.ts
 ```
 
 ### Database
@@ -169,6 +200,30 @@ The publish browser test only runs with `E2E_ALLOW_PUBLISH=1`, because every
 publish uses up a real, permanent puzzle number. Run it only against a test
 database.
 
+**Puzzle list.** `/puzzles` searches by number (`12` or `#12`) or title and
+filters by stage: Building grid, Adding clues, Ready to publish, Published,
+Archived. Archived puzzles are hidden unless that filter is chosen. It shows
+20 per page, and the address keeps the search, so it can be bookmarked. Each
+row has these actions:
+- **Edit** or **View**, and **Review**;
+- **Copy** (`duplicate_puzzle()`: a new unnumbered draft with the same grid
+  and clues);
+- **Archive** or **Restore** (`archive_puzzle()` / `restore_puzzle()`).
+  Archiving a published puzzle withdraws it from the app but keeps its number
+  and content;
+- **Delete**, for drafts that were never published only.
+
+**Clue dictionary.** `/dictionary` lists every word from published puzzles,
+with its clue sets, how often it was used, and when it was last used. You can
+search it by the start of a word and sort it by most used, A–Z or recently
+used. Editing or removing a clue set only changes the suggestions offered for
+future puzzles. Published puzzles keep the clues they were published with.
+
+**Daily quotes.** `/quotes` shows one month at a time, with each day's quote
+displayed as the app shows it (quote in bold, the person in regular type, the
+comment in grey). Quotes are added and edited in place. A banner warns about
+any of the next 14 days that have no quote yet.
+
 **Applying new migrations.** Each build step may add a file to
 `supabase/migrations/`. Run `npm run db:push`, or paste the new file into the
 Supabase SQL Editor.
@@ -181,6 +236,60 @@ write-once snapshot, adds the words and clues to the dictionary, and writes an
 audit entry. After that, a published puzzle's grid, words and clues are locked
 by triggers. It can be archived but not deleted, and dictionary edits never
 alter a published snapshot.
+
+## Mobile app API (v1)
+
+These are read-only, public JSON endpoints for the future Flutter app. They
+read through the Supabase `anon` role, which Row Level Security limits to live
+publication snapshots and released quotes, so drafts, archived puzzles and
+admin data can't be reached. Every response has `"apiVersion": "v1"`. Errors
+look like `{"apiVersion":"v1","error":{"code":"…","message":"…"}}`.
+
+| Request | Returns |
+| --- | --- |
+| `GET /api/v1/puzzles?after=0&limit=50` | `{ puzzles: [{ puzzleNumber, version, publishedAt }], hasMore }`, in number order |
+| `GET /api/v1/puzzles/next?after=12` | `{ puzzle }`: the first published puzzle numbered above `after`; 404 `no-more-puzzles` if none |
+| `GET /api/v1/puzzles/12` | `{ puzzle }`: one puzzle; 404 `not-found` |
+| `GET /api/v1/quotes/today?date=2026-11-09` | `{ quote: { date, text, author, comment } }` for the player's local date (default: today in Brisbane); 404 `no-quote` |
+
+`puzzle` is the snapshot stored at publication (`schemaVersion: "v1"`):
+- `puzzleId`, `puzzleNumber`, `version`, `publishedAt`, `gridSize` (12);
+- `solution`: 12 rows of `A–Z` / `#`;
+- `blockedCells`: `[row, column]` pairs;
+- `numberedCells`: `{ number, row, column }`;
+- `across` / `down`: words in solving order, each
+  `{ number, label: "1a", answer, length, startRow, startColumn,
+  startSquare: "R01C01", cells, clues: { harder, medium, easier } }`;
+- `scoring.pointsPerLetter`: `{ harder: 7, medium: 5, easier: 3, showMe: 0 }`;
+- `letterCount` and `maxScore`.
+
+Rows and columns are 0-based.
+
+Notes for the app:
+- **Ask for "next after the last puzzle played", not "number + 1".** Numbers
+  can skip when a puzzle is withdrawn (archived).
+- **Answers are in the download** so letters can be checked offline. A
+  determined player could read them, which is an accepted limitation.
+- **Caching:** published puzzles never change, so they're served with long
+  cache headers. Lists and "next" are cached for about a minute.
+- **Quote dates:** the app should send its own local date. Dates more than a
+  day away from UTC "today" are refused, so future quotes can't be peeked at.
+
+## Security
+
+- **Admin access has three layers:** the proxy redirects signed-out visitors;
+  every admin page and Server Action calls `requireAdmin()`; and Postgres RLS
+  refuses admin data to non-admins. The website never uses the service-role
+  key.
+- **Server-side checks:** publishing, Done and clue saving are re-checked on
+  the server and in the database. Published puzzles are locked by triggers.
+  Every important action is written to `admin_audit_logs`.
+- **Headers:** every response sends `X-Frame-Options: DENY`, `frame-ancestors
+  'none'`, `nosniff`, a strict referrer policy, HSTS and a restrictive
+  permissions policy. `robots.txt` and page metadata keep search engines out.
+- **Login:** sign-ups are off (admins are created by script), passwords need
+  at least 10 characters, and login errors don't reveal whether an email has
+  an account.
 
 ## Source of truth
 

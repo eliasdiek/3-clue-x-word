@@ -160,11 +160,13 @@ describe("row level security", () => {
     expect(rows[0].is_admin).toBe(false);
   });
 
-  it("only releases today's and past quotes to the public", async () => {
+  it("doesn't release future quotes to the public (beyond time-zone lead)", async () => {
+    // Up to one day ahead of UTC is allowed (see 20261109000100), so
+    // players east of UTC get their own "today".
     await asRole(db, "authenticated", adminId, (tx) =>
       tx.query(
         `insert into public.daily_quotes (quote_date, quote_text, author) values
-           (current_date, 'Today', 'A'), (current_date + 1, 'Tomorrow', 'B')`,
+           (current_date, 'Today', 'A'), (current_date + 3, 'Later', 'B')`,
       ),
     );
     const { rows } = await asRole(db, "anon", null, (tx) =>

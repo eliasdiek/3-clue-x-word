@@ -32,6 +32,24 @@ test.describe("protected routes", () => {
     const response = await request.get("/api/admin/puzzles");
     expect(response.status()).toBe(404);
   });
+
+  test("the mobile API answers in its versioned JSON shape", async ({ request }) => {
+    const response = await request.get("/api/v1/puzzles");
+    // 200 with a real database; 503 when the placeholder database is unreachable.
+    expect([200, 503]).toContain(response.status());
+    const body = await response.json();
+    expect(body.apiVersion).toBe("v1");
+    expect(body.puzzles ?? body.error).toBeTruthy();
+  });
+
+  test("sends security headers and keeps search engines out", async ({ request }) => {
+    const page = await request.get("/login");
+    expect(page.headers()["x-frame-options"]).toBe("DENY");
+    expect(page.headers()["x-content-type-options"]).toBe("nosniff");
+    expect(page.headers()["x-powered-by"]).toBeUndefined();
+    const robots = await request.get("/robots.txt");
+    expect(await robots.text()).toContain("Disallow: /");
+  });
 });
 
 test.describe("login page", () => {
