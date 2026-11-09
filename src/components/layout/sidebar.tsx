@@ -15,7 +15,12 @@ import { activeNavHref, NAV_ITEMS } from "./nav-items";
  */
 export function Sidebar() {
   return (
-    <nav aria-label="Main" className="relative flex w-20 shrink-0 flex-col overflow-hidden bg-navy px-3 py-8 lg:w-64 lg:px-4">
+    // Fills the height beside the scrolling page; scrolls itself only if the
+    // window is too short for all the links.
+    <nav
+      aria-label="Main"
+      className="relative flex w-20 shrink-0 flex-col overflow-x-hidden overflow-y-auto bg-navy px-3 py-8 lg:w-64 lg:px-4"
+    >
       <Suspense fallback={<NavLinks active={null} />}>
         <HighlightedNavLinks />
       </Suspense>

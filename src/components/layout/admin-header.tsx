@@ -8,7 +8,7 @@ export function AdminHeader({ accountMenu }: { accountMenu: ReactNode }) {
     // z-20 keeps the header (and the account dropdown that hangs below it)
     // above the page. Only the decorative waves are clipped, not the header,
     // so the dropdown can extend past the header's bottom edge.
-    <header className="relative isolate z-20 flex h-20 items-center gap-4 border-b border-line bg-surface px-4 sm:h-24 sm:gap-6 sm:px-8">
+    <header className="relative isolate z-20 flex h-20 shrink-0 items-center gap-4 border-b border-line bg-surface px-4 sm:h-24 sm:gap-6 sm:px-8">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <svg
           viewBox="0 0 800 100"

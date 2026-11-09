@@ -13,7 +13,9 @@ import { requireAdmin } from "@/lib/auth/dal";
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    // The page is exactly the window's height: the header and sidebar stay in
+    // place and only <main> scrolls.
+    <div className="flex h-dvh flex-col overflow-hidden">
       <AdminHeader
         accountMenu={
           <Suspense fallback={<div className="size-11 rounded-full bg-brand-soft skeleton-pulse" />}>
@@ -21,9 +23,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Suspense>
         }
       />
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         <Sidebar />
-        <main id="main" className="min-w-0 flex-1 px-4 py-8 sm:px-8 lg:px-10">
+        <main id="main" className="min-w-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8 lg:px-10">
           <Suspense fallback={<PageLoading />}>
             <AdminGate>{children}</AdminGate>
           </Suspense>
