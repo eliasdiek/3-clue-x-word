@@ -117,7 +117,7 @@ test.describe("signed in", () => {
 
     await expect(page).toHaveURL(/\/dashboard/);
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByText("Total Puzzles")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Puzzle stock" })).toBeVisible();
 
     await page.goto("/login");
     await expect(page).toHaveURL(/\/dashboard/);
