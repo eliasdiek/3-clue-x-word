@@ -25,7 +25,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
       <div className="flex min-h-0 flex-1">
         <Sidebar />
-        <main id="main" className="min-w-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8 lg:px-10">
+        {/* `relative` makes <main> the containing block for absolutely
+            positioned content (e.g. screen-reader-only text), so it scrolls
+            and clips with the page instead of stretching the whole window. */}
+        <main id="main" className="relative min-w-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8 lg:px-10">
           <Suspense fallback={<PageLoading />}>
             <AdminGate>{children}</AdminGate>
           </Suspense>

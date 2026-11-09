@@ -15,15 +15,15 @@ import { activeNavHref, NAV_ITEMS } from "./nav-items";
  */
 export function Sidebar() {
   return (
-    // Fills the height beside the scrolling page; scrolls itself only if the
-    // window is too short for all the links.
-    <nav
-      aria-label="Main"
-      className="relative flex w-20 shrink-0 flex-col overflow-x-hidden overflow-y-auto bg-navy px-3 py-8 lg:w-64 lg:px-4"
-    >
-      <Suspense fallback={<NavLinks active={null} />}>
-        <HighlightedNavLinks />
-      </Suspense>
+    // Fills the height beside the scrolling page. The decorative tiles are
+    // clipped by the nav; only the links scroll, and only if the window is
+    // too short for them all.
+    <nav aria-label="Main" className="relative flex w-20 shrink-0 flex-col overflow-hidden bg-navy lg:w-64">
+      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto px-3 py-8 lg:px-4">
+        <Suspense fallback={<NavLinks active={null} />}>
+          <HighlightedNavLinks />
+        </Suspense>
+      </div>
       <TileScatter variant="navy" className="absolute -bottom-4 -left-4 w-48 rotate-12" />
     </nav>
   );
