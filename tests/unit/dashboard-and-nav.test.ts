@@ -40,7 +40,7 @@ describe("describeActivity", () => {
     );
     expect(describeActivity({ action: "puzzle.archived", resourceId: "gone", metadata: {} }, names)).toBe("Archived a puzzle");
     expect(describeActivity({ action: "quote.saved", resourceId: null, metadata: { date: "2026-11-12" } }, names)).toBe(
-      "Saved the quote for Thu 12 Nov",
+      "Saved the quote for Thu, 12 Nov",
     );
   });
 
