@@ -1,0 +1,1467 @@
+{
+ "puzzleId": "00000000-0000-4000-8000-000000000007",
+ "puzzleNumber": 7,
+ "version": 1,
+ "publishedAt": "2026-11-09T00:00:00Z",
+ "schemaVersion": "v1",
+ "gridSize": 12,
+ "solution": [
+  "JEALOUSY#SUM",
+  "O#L#V#A##A#A",
+  "VALUE#SILVER",
+  "I#E#R#H##A#A",
+  "ABYSS##EIGHT",
+  "L##Y###L#E#H",
+  "##AMPS#VIDEO",
+  "HELP##LED##N",
+  "A#OT###SIGNS",
+  "N#EON###O#O#",
+  "D##MOMENT#N#",
+  "YAK#DODOS#E#"
+ ],
+ "blockedCells": [
+  [
+   0,
+   8
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   1,
+   7
+  ],
+  [
+   1,
+   8
+  ],
+  [
+   1,
+   10
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   1
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   3,
+   7
+  ],
+  [
+   3,
+   8
+  ],
+  [
+   3,
+   10
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   4,
+   6
+  ],
+  [
+   5,
+   1
+  ],
+  [
+   5,
+   2
+  ],
+  [
+   5,
+   4
+  ],
+  [
+   5,
+   5
+  ],
+  [
+   5,
+   6
+  ],
+  [
+   5,
+   8
+  ],
+  [
+   5,
+   10
+  ],
+  [
+   6,
+   0
+  ],
+  [
+   6,
+   1
+  ],
+  [
+   6,
+   6
+  ],
+  [
+   7,
+   4
+  ],
+  [
+   7,
+   5
+  ],
+  [
+   7,
+   9
+  ],
+  [
+   7,
+   10
+  ],
+  [
+   8,
+   1
+  ],
+  [
+   8,
+   4
+  ],
+  [
+   8,
+   5
+  ],
+  [
+   8,
+   6
+  ],
+  [
+   9,
+   1
+  ],
+  [
+   9,
+   5
+  ],
+  [
+   9,
+   6
+  ],
+  [
+   9,
+   7
+  ],
+  [
+   9,
+   9
+  ],
+  [
+   9,
+   11
+  ],
+  [
+   10,
+   1
+  ],
+  [
+   10,
+   2
+  ],
+  [
+   10,
+   9
+  ],
+  [
+   10,
+   11
+  ],
+  [
+   11,
+   3
+  ],
+  [
+   11,
+   9
+  ],
+  [
+   11,
+   11
+  ]
+ ],
+ "numberedCells": [
+  {
+   "number": 1,
+   "row": 0,
+   "column": 0
+  },
+  {
+   "number": 2,
+   "row": 0,
+   "column": 2
+  },
+  {
+   "number": 3,
+   "row": 0,
+   "column": 4
+  },
+  {
+   "number": 4,
+   "row": 0,
+   "column": 6
+  },
+  {
+   "number": 5,
+   "row": 0,
+   "column": 9
+  },
+  {
+   "number": 6,
+   "row": 0,
+   "column": 11
+  },
+  {
+   "number": 7,
+   "row": 2,
+   "column": 0
+  },
+  {
+   "number": 8,
+   "row": 2,
+   "column": 6
+  },
+  {
+   "number": 9,
+   "row": 4,
+   "column": 0
+  },
+  {
+   "number": 10,
+   "row": 4,
+   "column": 3
+  },
+  {
+   "number": 11,
+   "row": 4,
+   "column": 7
+  },
+  {
+   "number": 12,
+   "row": 6,
+   "column": 2
+  },
+  {
+   "number": 13,
+   "row": 6,
+   "column": 7
+  },
+  {
+   "number": 14,
+   "row": 6,
+   "column": 8
+  },
+  {
+   "number": 15,
+   "row": 7,
+   "column": 0
+  },
+  {
+   "number": 16,
+   "row": 7,
+   "column": 6
+  },
+  {
+   "number": 17,
+   "row": 8,
+   "column": 2
+  },
+  {
+   "number": 18,
+   "row": 8,
+   "column": 7
+  },
+  {
+   "number": 19,
+   "row": 8,
+   "column": 10
+  },
+  {
+   "number": 20,
+   "row": 9,
+   "column": 2
+  },
+  {
+   "number": 21,
+   "row": 9,
+   "column": 4
+  },
+  {
+   "number": 22,
+   "row": 10,
+   "column": 3
+  },
+  {
+   "number": 23,
+   "row": 10,
+   "column": 5
+  },
+  {
+   "number": 24,
+   "row": 10,
+   "column": 6
+  },
+  {
+   "number": 25,
+   "row": 10,
+   "column": 7
+  },
+  {
+   "number": 26,
+   "row": 11,
+   "column": 0
+  },
+  {
+   "number": 27,
+   "row": 11,
+   "column": 4
+  }
+ ],
+ "across": [
+  {
+   "number": 1,
+   "label": "1a",
+   "answer": "JEALOUSY",
+   "length": 8,
+   "startRow": 0,
+   "startColumn": 0,
+   "startSquare": "R01C01",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     0,
+     7
+    ]
+   ],
+   "clues": {
+    "harder": "Harder JEALOUSY",
+    "medium": "Medium JEALOUSY",
+    "easier": "Easier JEALOUSY"
+   }
+  },
+  {
+   "number": 5,
+   "label": "5a",
+   "answer": "SUM",
+   "length": 3,
+   "startRow": 0,
+   "startColumn": 9,
+   "startSquare": "R01C10",
+   "cells": [
+    [
+     0,
+     9
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     0,
+     11
+    ]
+   ],
+   "clues": {
+    "harder": "Harder SUM",
+    "medium": "Medium SUM",
+    "easier": "Easier SUM"
+   }
+  },
+  {
+   "number": 7,
+   "label": "7a",
+   "answer": "VALUE",
+   "length": 5,
+   "startRow": 2,
+   "startColumn": 0,
+   "startSquare": "R03C01",
+   "cells": [
+    [
+     2,
+     0
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     4
+    ]
+   ],
+   "clues": {
+    "harder": "Harder VALUE",
+    "medium": "Medium VALUE",
+    "easier": "Easier VALUE"
+   }
+  },
+  {
+   "number": 8,
+   "label": "8a",
+   "answer": "SILVER",
+   "length": 6,
+   "startRow": 2,
+   "startColumn": 6,
+   "startSquare": "R03C07",
+   "cells": [
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     2,
+     11
+    ]
+   ],
+   "clues": {
+    "harder": "Harder SILVER",
+    "medium": "Medium SILVER",
+    "easier": "Easier SILVER"
+   }
+  },
+  {
+   "number": 9,
+   "label": "9a",
+   "answer": "ABYSS",
+   "length": 5,
+   "startRow": 4,
+   "startColumn": 0,
+   "startSquare": "R05C01",
+   "cells": [
+    [
+     4,
+     0
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "clues": {
+    "harder": "Harder ABYSS",
+    "medium": "Medium ABYSS",
+    "easier": "Easier ABYSS"
+   }
+  },
+  {
+   "number": 11,
+   "label": "11a",
+   "answer": "EIGHT",
+   "length": 5,
+   "startRow": 4,
+   "startColumn": 7,
+   "startSquare": "R05C08",
+   "cells": [
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     4,
+     11
+    ]
+   ],
+   "clues": {
+    "harder": "Harder EIGHT",
+    "medium": "Medium EIGHT",
+    "easier": "Easier EIGHT"
+   }
+  },
+  {
+   "number": 12,
+   "label": "12a",
+   "answer": "AMPS",
+   "length": 4,
+   "startRow": 6,
+   "startColumn": 2,
+   "startSquare": "R07C03",
+   "cells": [
+    [
+     6,
+     2
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "clues": {
+    "harder": "Harder AMPS",
+    "medium": "Medium AMPS",
+    "easier": "Easier AMPS"
+   }
+  },
+  {
+   "number": 13,
+   "label": "13a",
+   "answer": "VIDEO",
+   "length": 5,
+   "startRow": 6,
+   "startColumn": 7,
+   "startSquare": "R07C08",
+   "cells": [
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     11
+    ]
+   ],
+   "clues": {
+    "harder": "Harder VIDEO",
+    "medium": "Medium VIDEO",
+    "easier": "Easier VIDEO"
+   }
+  },
+  {
+   "number": 15,
+   "label": "15a",
+   "answer": "HELP",
+   "length": 4,
+   "startRow": 7,
+   "startColumn": 0,
+   "startSquare": "R08C01",
+   "cells": [
+    [
+     7,
+     0
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     3
+    ]
+   ],
+   "clues": {
+    "harder": "Harder HELP",
+    "medium": "Medium HELP",
+    "easier": "Easier HELP"
+   }
+  },
+  {
+   "number": 16,
+   "label": "16a",
+   "answer": "LED",
+   "length": 3,
+   "startRow": 7,
+   "startColumn": 6,
+   "startSquare": "R08C07",
+   "cells": [
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "clues": {
+    "harder": "Harder LED",
+    "medium": "Medium LED",
+    "easier": "Easier LED"
+   }
+  },
+  {
+   "number": 17,
+   "label": "17a",
+   "answer": "OT",
+   "length": 2,
+   "startRow": 8,
+   "startColumn": 2,
+   "startSquare": "R09C03",
+   "cells": [
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     3
+    ]
+   ],
+   "clues": {
+    "harder": "Harder OT",
+    "medium": "Medium OT",
+    "easier": "Easier OT"
+   }
+  },
+  {
+   "number": 18,
+   "label": "18a",
+   "answer": "SIGNS",
+   "length": 5,
+   "startRow": 8,
+   "startColumn": 7,
+   "startSquare": "R09C08",
+   "cells": [
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     11
+    ]
+   ],
+   "clues": {
+    "harder": "Harder SIGNS",
+    "medium": "Medium SIGNS",
+    "easier": "Easier SIGNS"
+   }
+  },
+  {
+   "number": 20,
+   "label": "20a",
+   "answer": "EON",
+   "length": 3,
+   "startRow": 9,
+   "startColumn": 2,
+   "startSquare": "R10C03",
+   "cells": [
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "clues": {
+    "harder": "Harder EON",
+    "medium": "Medium EON",
+    "easier": "Easier EON"
+   }
+  },
+  {
+   "number": 22,
+   "label": "22a",
+   "answer": "MOMENT",
+   "length": 6,
+   "startRow": 10,
+   "startColumn": 3,
+   "startSquare": "R11C04",
+   "cells": [
+    [
+     10,
+     3
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "clues": {
+    "harder": "Harder MOMENT",
+    "medium": "Medium MOMENT",
+    "easier": "Easier MOMENT"
+   }
+  },
+  {
+   "number": 26,
+   "label": "26a",
+   "answer": "YAK",
+   "length": 3,
+   "startRow": 11,
+   "startColumn": 0,
+   "startSquare": "R12C01",
+   "cells": [
+    [
+     11,
+     0
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     2
+    ]
+   ],
+   "clues": {
+    "harder": "Harder YAK",
+    "medium": "Medium YAK",
+    "easier": "Easier YAK"
+   }
+  },
+  {
+   "number": 27,
+   "label": "27a",
+   "answer": "DODOS",
+   "length": 5,
+   "startRow": 11,
+   "startColumn": 4,
+   "startSquare": "R12C05",
+   "cells": [
+    [
+     11,
+     4
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     11,
+     8
+    ]
+   ],
+   "clues": {
+    "harder": "Harder DODOS",
+    "medium": "Medium DODOS",
+    "easier": "Easier DODOS"
+   }
+  }
+ ],
+ "down": [
+  {
+   "number": 1,
+   "label": "1d",
+   "answer": "JOVIAL",
+   "length": 6,
+   "startRow": 0,
+   "startColumn": 0,
+   "startSquare": "R01C01",
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     5,
+     0
+    ]
+   ],
+   "clues": {
+    "harder": "Harder JOVIAL",
+    "medium": "Medium JOVIAL",
+    "easier": "Easier JOVIAL"
+   }
+  },
+  {
+   "number": 2,
+   "label": "2d",
+   "answer": "ALLEY",
+   "length": 5,
+   "startRow": 0,
+   "startColumn": 2,
+   "startSquare": "R01C03",
+   "cells": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     4,
+     2
+    ]
+   ],
+   "clues": {
+    "harder": "Harder ALLEY",
+    "medium": "Medium ALLEY",
+    "easier": "Easier ALLEY"
+   }
+  },
+  {
+   "number": 3,
+   "label": "3d",
+   "answer": "OVERS",
+   "length": 5,
+   "startRow": 0,
+   "startColumn": 4,
+   "startSquare": "R01C05",
+   "cells": [
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "clues": {
+    "harder": "Harder OVERS",
+    "medium": "Medium OVERS",
+    "easier": "Easier OVERS"
+   }
+  },
+  {
+   "number": 4,
+   "label": "4d",
+   "answer": "SASH",
+   "length": 4,
+   "startRow": 0,
+   "startColumn": 6,
+   "startSquare": "R01C07",
+   "cells": [
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     6
+    ]
+   ],
+   "clues": {
+    "harder": "Harder SASH",
+    "medium": "Medium SASH",
+    "easier": "Easier SASH"
+   }
+  },
+  {
+   "number": 5,
+   "label": "5d",
+   "answer": "SAVAGED",
+   "length": 7,
+   "startRow": 0,
+   "startColumn": 9,
+   "startSquare": "R01C10",
+   "cells": [
+    [
+     0,
+     9
+    ],
+    [
+     1,
+     9
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "clues": {
+    "harder": "Harder SAVAGED",
+    "medium": "Medium SAVAGED",
+    "easier": "Easier SAVAGED"
+   }
+  },
+  {
+   "number": 6,
+   "label": "6d",
+   "answer": "MARATHONS",
+   "length": 9,
+   "startRow": 0,
+   "startColumn": 11,
+   "startSquare": "R01C12",
+   "cells": [
+    [
+     0,
+     11
+    ],
+    [
+     1,
+     11
+    ],
+    [
+     2,
+     11
+    ],
+    [
+     3,
+     11
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     8,
+     11
+    ]
+   ],
+   "clues": {
+    "harder": "Harder MARATHONS",
+    "medium": "Medium MARATHONS",
+    "easier": "Easier MARATHONS"
+   }
+  },
+  {
+   "number": 10,
+   "label": "10d",
+   "answer": "SYMPTOM",
+   "length": 7,
+   "startRow": 4,
+   "startColumn": 3,
+   "startSquare": "R05C04",
+   "cells": [
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     3
+    ]
+   ],
+   "clues": {
+    "harder": "Harder SYMPTOM",
+    "medium": "Medium SYMPTOM",
+    "easier": "Easier SYMPTOM"
+   }
+  },
+  {
+   "number": 11,
+   "label": "11d",
+   "answer": "ELVES",
+   "length": 5,
+   "startRow": 4,
+   "startColumn": 7,
+   "startSquare": "R05C08",
+   "cells": [
+    [
+     4,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "clues": {
+    "harder": "Harder ELVES",
+    "medium": "Medium ELVES",
+    "easier": "Easier ELVES"
+   }
+  },
+  {
+   "number": 12,
+   "label": "12d",
+   "answer": "ALOE",
+   "length": 4,
+   "startRow": 6,
+   "startColumn": 2,
+   "startSquare": "R07C03",
+   "cells": [
+    [
+     6,
+     2
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     9,
+     2
+    ]
+   ],
+   "clues": {
+    "harder": "Harder ALOE",
+    "medium": "Medium ALOE",
+    "easier": "Easier ALOE"
+   }
+  },
+  {
+   "number": 14,
+   "label": "14d",
+   "answer": "IDIOTS",
+   "length": 6,
+   "startRow": 6,
+   "startColumn": 8,
+   "startSquare": "R07C09",
+   "cells": [
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     11,
+     8
+    ]
+   ],
+   "clues": {
+    "harder": "Harder IDIOTS",
+    "medium": "Medium IDIOTS",
+    "easier": "Easier IDIOTS"
+   }
+  },
+  {
+   "number": 15,
+   "label": "15d",
+   "answer": "HANDY",
+   "length": 5,
+   "startRow": 7,
+   "startColumn": 0,
+   "startSquare": "R08C01",
+   "cells": [
+    [
+     7,
+     0
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     9,
+     0
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     11,
+     0
+    ]
+   ],
+   "clues": {
+    "harder": "Harder HANDY",
+    "medium": "Medium HANDY",
+    "easier": "Easier HANDY"
+   }
+  },
+  {
+   "number": 19,
+   "label": "19d",
+   "answer": "NONE",
+   "length": 4,
+   "startRow": 8,
+   "startColumn": 10,
+   "startSquare": "R09C11",
+   "cells": [
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     11,
+     10
+    ]
+   ],
+   "clues": {
+    "harder": "Harder NONE",
+    "medium": "Medium NONE",
+    "easier": "Easier NONE"
+   }
+  },
+  {
+   "number": 21,
+   "label": "21d",
+   "answer": "NOD",
+   "length": 3,
+   "startRow": 9,
+   "startColumn": 4,
+   "startSquare": "R10C05",
+   "cells": [
+    [
+     9,
+     4
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     4
+    ]
+   ],
+   "clues": {
+    "harder": "Harder NOD",
+    "medium": "Medium NOD",
+    "easier": "Easier NOD"
+   }
+  },
+  {
+   "number": 23,
+   "label": "23d",
+   "answer": "MO",
+   "length": 2,
+   "startRow": 10,
+   "startColumn": 5,
+   "startSquare": "R11C06",
+   "cells": [
+    [
+     10,
+     5
+    ],
+    [
+     11,
+     5
+    ]
+   ],
+   "clues": {
+    "harder": "Harder MO",
+    "medium": "Medium MO",
+    "easier": "Easier MO"
+   }
+  },
+  {
+   "number": 24,
+   "label": "24d",
+   "answer": "ED",
+   "length": 2,
+   "startRow": 10,
+   "startColumn": 6,
+   "startSquare": "R11C07",
+   "cells": [
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     6
+    ]
+   ],
+   "clues": {
+    "harder": "Harder ED",
+    "medium": "Medium ED",
+    "easier": "Easier ED"
+   }
+  },
+  {
+   "number": 25,
+   "label": "25d",
+   "answer": "NO",
+   "length": 2,
+   "startRow": 10,
+   "startColumn": 7,
+   "startSquare": "R11C08",
+   "cells": [
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     7
+    ]
+   ],
+   "clues": {
+    "harder": "Harder NO",
+    "medium": "Medium NO",
+    "easier": "Easier NO"
+   }
+  }
+ ],
+ "scoring": {
+  "pointsPerLetter": {
+   "harder": 7,
+   "medium": 5,
+   "easier": 3,
+   "showMe": 0
+  }
+ },
+ "letterCount": 97,
+ "maxScore": 679
+}
