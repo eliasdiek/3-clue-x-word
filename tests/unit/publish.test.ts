@@ -93,3 +93,14 @@ describe("chooseAutoTitle", () => {
     expect(chooseAutoTitle("HEAVE", ["JEALOUSY"])).toBe("HEAVE");
   });
 });
+
+describe("firstAcrossWord", () => {
+  it("is the leftmost word of two or more letters in the highest row that has one", async () => {
+    const { firstAcrossWord } = await import("@/lib/puzzle/grid");
+    const blank = ".".repeat(12);
+    expect(firstAcrossWord(["HEAVE##WINDY", ...Array(11).fill(blank)])).toBe("HEAVE");
+    // A lone letter isn't a word (it may start a down word): look further down.
+    expect(firstAcrossWord(["J...........", "E..CAT......", ...Array(10).fill(blank)])).toBe("CAT");
+    expect(firstAcrossWord(Array(12).fill(blank))).toBeNull();
+  });
+});

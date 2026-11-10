@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth/dal";
 import { writeAuditLog } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
 import { chooseAutoTitle } from "./format";
-import { analyzeGrid, gridProblems, parseGrid, toEditableGrid } from "./grid";
+import { analyzeGrid, firstAcrossWord, gridProblems, parseGrid, toEditableGrid } from "./grid";
 
 /**
  * Server Actions for the grid editor. Each one re-checks the administrator
@@ -69,7 +69,8 @@ export async function saveGridDraft(input: {
       resourceType: "puzzle",
       resourceId: data.id,
     });
-    return { ok: true, puzzleId: data.id, updatedAt: data.updated_at };
+    const titled = await giveAutoTitle(supabase, data.id, firstAcrossWord(grid), null);
+    return { ok: true, puzzleId: data.id, updatedAt: titled ?? data.updated_at };
   }
 
   // Editing the grid un-finishes it: the word list must be regenerated on Done.
@@ -79,10 +80,14 @@ export async function saveGridDraft(input: {
     .eq("id", input.puzzleId)
     .is("published_at", null);
   if (input.expectedUpdatedAt) query = query.eq("updated_at", input.expectedUpdatedAt);
-  const { data, error } = await query.select("id, updated_at").maybeSingle();
+  const { data, error } = await query.select("id, updated_at, title").maybeSingle();
 
   if (error) return explain(error);
-  if (data) return { ok: true, puzzleId: data.id, updatedAt: data.updated_at };
+  if (data) {
+    // Keep the title in step with the first across word as it's typed.
+    const titled = await giveAutoTitle(supabase, data.id, firstAcrossWord(grid), data.title);
+    return { ok: true, puzzleId: data.id, updatedAt: titled ?? data.updated_at };
+  }
   return whyNotUpdated(input.puzzleId);
 }
 
@@ -130,8 +135,7 @@ export async function finishGrid(input: {
   const row = data?.[0];
   if (!row) return fail("error");
 
-  const firstAcross = analysis.words.filter((w) => w.direction === "across").sort((a, b) => a.number - b.number)[0];
-  const titled = firstAcross ? await giveAutoTitle(supabase, puzzleId, firstAcross.answer) : null;
+  const titled = await giveAutoTitle(supabase, puzzleId, firstAcrossWord(parsed));
   return {
     ok: true,
     puzzleId,
@@ -153,10 +157,21 @@ const AUTO_TITLE = /^[A-Z]+\d*$/;
  * updated if the first word changed. Returns the puzzle's new updated_at, or
  * null if nothing changed.
  */
-async function giveAutoTitle(supabase: Supabase, puzzleId: string, answer: string): Promise<string | null> {
+async function giveAutoTitle(
+  supabase: Supabase,
+  puzzleId: string,
+  answer: string | null,
+  /** The puzzle's title if already known (null = untitled); fetched when left out. */
+  knownTitle?: string | null,
+): Promise<string | null> {
+  if (!answer) return null; // no across word yet
   try {
-    const { data: puzzle } = await supabase.from("puzzles").select("title").eq("id", puzzleId).maybeSingle();
-    const current = puzzle?.title?.trim() ?? "";
+    let title = knownTitle;
+    if (title === undefined) {
+      const { data: puzzle } = await supabase.from("puzzles").select("title").eq("id", puzzleId).maybeSingle();
+      title = puzzle?.title ?? null;
+    }
+    const current = title?.trim() ?? "";
     if (current && !AUTO_TITLE.test(current)) return null; // typed by someone: keep it
     if (current && new RegExp(`^${answer}\\d*$`).test(current)) return null; // already named after this word
 
@@ -165,18 +180,18 @@ async function giveAutoTitle(supabase: Supabase, puzzleId: string, answer: strin
       .select("title")
       .neq("id", puzzleId)
       .ilike("title", `${answer}%`);
-    const title = chooseAutoTitle(
+    const next = chooseAutoTitle(
       answer,
       (others ?? []).map((o) => o.title ?? "").filter((t) => new RegExp(`^${answer}\\d*$`, "i").test(t)),
     );
-    const { data, error } = await supabase.from("puzzles").update({ title }).eq("id", puzzleId).select("updated_at").maybeSingle();
+    const { data, error } = await supabase.from("puzzles").update({ title: next }).eq("id", puzzleId).select("updated_at").maybeSingle();
     if (error) {
       console.error("[puzzle] auto title failed:", error.code, error.message);
       return null;
     }
     return data?.updated_at ?? null;
   } catch (error) {
-    // A missing title is no reason to fail Done.
+    // A missing title is no reason to fail a save.
     console.error("[puzzle] auto title failed:", error);
     return null;
   }

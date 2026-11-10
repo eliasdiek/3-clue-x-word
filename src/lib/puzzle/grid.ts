@@ -199,3 +199,17 @@ export function matchClueCarryOver<Old extends WordIdentity, New extends WordIde
     dropped: oldWords.filter((_, j) => !used.has(j)),
   };
 }
+
+/**
+ * The first across word (1a, or whichever across word is numbered first):
+ * the leftmost run of two or more letters in the highest row that has one.
+ * Works while composing too. Used to title puzzles; the SQL backfill in
+ * 20261110000100_auto_titles.sql uses the same rule.
+ */
+export function firstAcrossWord(grid: GridRows): string | null {
+  for (const row of grid) {
+    const match = row.match(/[A-Z]{2,}/);
+    if (match) return match[0];
+  }
+  return null;
+}
