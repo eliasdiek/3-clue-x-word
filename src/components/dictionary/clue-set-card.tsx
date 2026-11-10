@@ -102,7 +102,7 @@ export function ClueSetCard({ id, word, clues, usedIn }: { id: string; word: str
       </div>
       {editing ? (
         <p className="mt-2 text-sm text-ink-muted">
-          Changes only affect suggestions for future puzzles. Published puzzles keep the clues they were published with.
+          Changes only affect suggestions for future puzzles. Stored puzzles keep the clues they were stored with.
         </p>
       ) : null}
       {error ? (
@@ -114,7 +114,7 @@ export function ClueSetCard({ id, word, clues, usedIn }: { id: string; word: str
       <ConfirmDialog
         open={confirmDelete}
         title={`Remove this clue set for ${word}?`}
-        description="It will no longer be suggested for new puzzles. Published puzzles keep their clues."
+        description="It will no longer be suggested for new puzzles. Stored puzzles keep their clues."
         confirmLabel="Remove"
         tone="danger"
         loading={pending}

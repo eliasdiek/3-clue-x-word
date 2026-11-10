@@ -33,7 +33,7 @@ describe("describeActivity", () => {
   const names = new Map([["p1", "“Sunday special”"]]);
   it("names puzzles and adds useful detail", () => {
     expect(describeActivity({ action: "puzzle.published", resourceId: "p1", metadata: { puzzleNumber: 12 } }, names)).toBe(
-      "Published puzzle #12",
+      "Stored puzzle #12",
     );
     expect(describeActivity({ action: "puzzle.grid_finished", resourceId: "p1", metadata: { wordCount: 32 } }, names)).toBe(
       "Finished the grid of “Sunday special” (32 words)",

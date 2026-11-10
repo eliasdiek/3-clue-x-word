@@ -32,7 +32,7 @@ export function describeActivity(entry: AuditEntry, names: PuzzleNames): string 
       return meta(entry, "complete") ? `Checked the clues of ${puzzle}: all present` : `Checked the clues of ${puzzle}: some missing`;
     case "puzzle.published": {
       const number = meta(entry, "puzzleNumber");
-      return typeof number === "number" ? `Published puzzle #${number}` : `Published ${puzzle}`;
+      return typeof number === "number" ? `Stored puzzle #${number}` : `Stored ${puzzle}`;
     }
     case "puzzle.archived":
       return `Archived ${puzzle}`;

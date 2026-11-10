@@ -9,7 +9,7 @@ import { PuzzleSteps } from "@/components/puzzle/puzzle-steps";
 import { ReviewView } from "@/components/puzzle/review-view";
 import { PageHeader } from "@/components/ui/card";
 
-export const metadata: Metadata = { title: "Review & Publish" };
+export const metadata: Metadata = { title: "Review & Store" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -51,7 +51,7 @@ function ReviewSkeleton() {
   return (
     <div className="flex flex-col gap-6" role="status">
       <span className="sr-only">Loading the review…</span>
-      <PageHeader title="Puzzle" description="Review & publish: check the finished puzzle before it goes to the app." />
+      <PageHeader title="Puzzle" description="Review & store: check the finished puzzle, then store it." />
       <PuzzleSteps current={3} />
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,44rem)_minmax(18rem,1fr)]">
         <div className="aspect-square w-full max-w-[44rem] rounded-card bg-brand-soft skeleton-pulse" />

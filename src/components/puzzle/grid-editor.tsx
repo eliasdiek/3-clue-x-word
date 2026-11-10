@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import {
   ArrowDown,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   CircleCheck,
   Clock3,
   Eraser,
@@ -38,6 +40,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, PageHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { callAction, RETRY_DELAY_MS, wait } from "./call-action";
 import { CrosswordBoard } from "./crossword-board";
 import { InfoCard, SaveStatus, type SaveState } from "./editor-status";
 import { PuzzleSteps } from "./puzzle-steps";
@@ -95,6 +98,8 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
   const savingRef = useRef<Promise<boolean> | null>(null);
   const blockedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** The last failure was Done (not an autosave), so "Try again" redoes Done. */
+  const retryFinishRef = useRef(false);
 
   const analysis = useMemo(() => analyzeGrid(grid), [grid]);
   const editing = mode === "editing" && !finishing;
@@ -112,7 +117,11 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
   const persist = useCallback(async (): Promise<boolean> => {
     if (savingRef.current) await savingRef.current;
     if (blockedRef.current) return false;
-    if (editVersion.current === savedVersion.current) return true;
+    if (editVersion.current === savedVersion.current) {
+      // Nothing left to save: clear an earlier error so "Try again" is seen to work.
+      setSave((s) => (s.state === "error" ? { state: "saved", at: new Date() } : s));
+      return true;
+    }
 
     const run = (async () => {
       while (editVersion.current !== savedVersion.current) {
@@ -124,11 +133,14 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
           return true;
         }
         setSave({ state: "saving" });
-        const result = await saveGridDraft({
-          puzzleId: idRef.current,
-          grid: current,
-          expectedUpdatedAt: updatedAtRef.current,
-        });
+        const attempt = () =>
+          callAction(() => saveGridDraft({ puzzleId: idRef.current, grid: current, expectedUpdatedAt: updatedAtRef.current }));
+        let result = await attempt();
+        // A brief network problem: try once more before reporting it.
+        if (!result.ok && result.reason === "error") {
+          await wait(RETRY_DELAY_MS);
+          result = await attempt();
+        }
         if (!result.ok) {
           const blocking = result.reason === "stale" || result.reason === "locked" || result.reason === "not-found";
           blockedRef.current = blocking;
@@ -182,12 +194,39 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
     if (inBounds(row, column)) setActive({ row, column });
   }
 
+  /**
+   * The square after (sign 1) or before (sign -1) the active one in the
+   * typing direction. Rows wrap: after column 12 comes column 1 of the next
+   * row (and down words continue at the top of the next column), so a whole
+   * grid can be typed straight through, as from a 12×12 table in Word.
+   */
+  function stepFrom({ row, column }: Position, sign: 1 | -1): Position | null {
+    const along = direction === "across" ? column : row;
+    const line = direction === "across" ? row : column;
+    let nextAlong = along + sign;
+    let nextLine = line;
+    if (nextAlong >= GRID_SIZE) {
+      nextAlong = 0;
+      nextLine++;
+    } else if (nextAlong < 0) {
+      nextAlong = GRID_SIZE - 1;
+      nextLine--;
+    }
+    if (nextLine < 0 || nextLine >= GRID_SIZE) return null;
+    return direction === "across" ? { row: nextLine, column: nextAlong } : { row: nextAlong, column: nextLine };
+  }
+
+  function step(sign: 1 | -1) {
+    const next = stepFrom(active, sign);
+    if (next) setActive(next);
+  }
+
+  /** Writes a letter, or a blank (EMPTY_CELL) for the space bar, and moves on. */
   function typeLetter(letter: string) {
     if (!editing) return;
     const { row, column } = active;
-    edit(withCell(gridRef.current, row, column, letter));
-    const [dRow, dColumn] = STEP[direction];
-    moveTo(row + dRow, column + dColumn);
+    if (cellAt(gridRef.current, row, column) !== letter) edit(withCell(gridRef.current, row, column, letter));
+    step(1);
   }
 
   function clearSquare() {
@@ -204,9 +243,8 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       edit(withCell(gridRef.current, row, column, EMPTY_CELL));
       return;
     }
-    const [dRow, dColumn] = STEP[direction];
-    const prev = { row: row - dRow, column: column - dColumn };
-    if (!inBounds(prev.row, prev.column)) return;
+    const prev = stepFrom(active, -1);
+    if (!prev) return;
     setActive(prev);
     if (isLetter(cellAt(gridRef.current, prev.row, prev.column))) {
       edit(withCell(gridRef.current, prev.row, prev.column, EMPTY_CELL));
@@ -242,11 +280,17 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
         clearSquare();
         return;
       case " ":
+        // A blank square (black on Done), like "Clear Square", then move on.
         event.preventDefault();
-        toggleDirection();
+        typeLetter(EMPTY_CELL);
         return;
       case "Enter":
         event.preventDefault();
+        step(1);
+        return;
+      case "Tab":
+        event.preventDefault();
+        step(event.shiftKey ? -1 : 1);
         return;
     }
     if (/^[a-z]$/i.test(event.key)) {
@@ -255,12 +299,26 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
     }
   }
 
-  // On-screen keyboards (tablets, phones) often deliver letters only as input.
+  // On-screen keyboards (tablets, phones) often deliver keys only as input.
   function onInput(event: FormEvent<HTMLInputElement>) {
     const value = event.currentTarget.value;
     event.currentTarget.value = "";
-    const letter = value.slice(-1).toUpperCase();
-    if (/^[A-Z]$/.test(letter)) typeLetter(letter);
+    const key = value.slice(-1).toUpperCase();
+    if (/^[A-Z]$/.test(key)) typeLetter(key);
+    else if (key === " ") typeLetter(EMPTY_CELL);
+  }
+
+  // The ˄ ˅ arrows above an iPad/iPhone keyboard move to the previous/next
+  // input on the page. Invisible inputs either side of the grid's input catch
+  // that and step one square back or forward instead.
+  function onArrowCatcherFocus(sign: 1 | -1) {
+    step(sign);
+    inputRef.current?.focus({ preventScroll: true });
+  }
+
+  function stepButton(sign: 1 | -1) {
+    step(sign);
+    inputRef.current?.focus({ preventScroll: true });
   }
 
   function onCellPointerDown(row: number, column: number) {
@@ -293,16 +351,20 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       if (blockedRef.current) return;
       const current = gridRef.current;
       const version = editVersion.current;
-      const result = await finishGrid({ puzzleId: idRef.current, grid: current, expectedUpdatedAt: updatedAtRef.current });
+      const result = await callAction(() =>
+        finishGrid({ puzzleId: idRef.current, grid: current, expectedUpdatedAt: updatedAtRef.current }),
+      );
       if (!result.ok) {
-        if (result.reason === "problems") setProblems(result.problems ?? [result.message]);
+        if (result.reason === "problems") setProblems(("problems" in result && result.problems) || [result.message]);
         else {
           const blocking = result.reason !== "error";
           blockedRef.current = blocking;
+          retryFinishRef.current = !blocking;
           setSave({ state: "error", message: result.message, blocking });
         }
         return;
       }
+      retryFinishRef.current = false;
       adopt(result.puzzleId, result.updatedAt);
       savedVersion.current = version;
       const words = analyzeGrid(current).words;
@@ -313,6 +375,14 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       setSave({ state: "saved", at: new Date() });
     } finally {
       setFinishing(false);
+    }
+  }
+
+  async function retry() {
+    const saved = await persist();
+    if (saved && retryFinishRef.current) {
+      retryFinishRef.current = false;
+      onDone();
     }
   }
 
@@ -371,7 +441,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
               Reload the page
             </button>
           ) : (
-            <button type="button" onClick={() => void persist()} className="mt-1 underline underline-offset-2">
+            <button type="button" onClick={() => void retry()} className="mt-1 underline underline-offset-2">
               Try saving again
             </button>
           )}
@@ -405,7 +475,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       ) : null}
 
       {mode === "locked" ? (
-        <Alert tone="info">This puzzle has been published, so its grid is locked and can no longer be changed.</Alert>
+        <Alert tone="info">This puzzle has been stored, so its grid is locked and can no longer be changed.</Alert>
       ) : null}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,44rem)_minmax(16rem,1fr)]">
@@ -422,6 +492,15 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
               problem: problemCells.has(cellKey(row, column)),
             })}
           >
+            {editing ? (
+              <input
+                aria-label="Previous square"
+                readOnly
+                onFocus={() => onArrowCatcherFocus(-1)}
+                className="absolute size-px border-0 p-0 opacity-0"
+                style={{ top: `${(active.row / GRID_SIZE) * 100}%`, left: `${(active.column / GRID_SIZE) * 100}%` }}
+              />
+            ) : null}
             <input
               ref={inputRef}
               aria-label="Type a letter into the selected square"
@@ -442,6 +521,15 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
                 height: `${100 / GRID_SIZE}%`,
               }}
             />
+            {editing ? (
+              <input
+                aria-label="Next square"
+                readOnly
+                onFocus={() => onArrowCatcherFocus(1)}
+                className="absolute size-px border-0 p-0 opacity-0"
+                style={{ top: `${(active.row / GRID_SIZE) * 100}%`, left: `${(active.column / GRID_SIZE) * 100}%` }}
+              />
+            ) : null}
           </CrosswordBoard>
           <p id="grid-position" className="sr-only" aria-live="polite">
             {`Row ${active.row + 1}, column ${active.column + 1}, ${isLetter(activeLetter) ? activeLetter : "empty"}. Typing ${direction}.`}
@@ -479,6 +567,14 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
                   ))}
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" icon={<ChevronLeft aria-hidden className="size-5" />} onClick={() => stepButton(-1)} disabled={!editing}>
+                  Back
+                </Button>
+                <Button variant="secondary" icon={<ChevronRight aria-hidden className="size-5" />} onClick={() => stepButton(1)} disabled={!editing}>
+                  Forward
+                </Button>
+              </div>
               <div className="grid gap-2">
                 <Button variant="secondary" icon={<Eraser aria-hidden className="size-5" />} onClick={clearSquare} disabled={!editing}>
                   Clear Square
@@ -496,13 +592,13 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
           ) : null}
 
           <InfoCard icon={Hash} tone="brand" label="Puzzle Number">
-            {initial.puzzleNumber ? `#${initial.puzzleNumber}` : "Given when published"}
+            {initial.puzzleNumber ? `#${initial.puzzleNumber}` : "Given when stored"}
           </InfoCard>
           <InfoCard icon={mode === "locked" ? Lock : mode === "finished" ? CircleCheck : PencilLine} tone="warning" label="Status">
-            {mode === "locked" ? "Published (locked)" : mode === "finished" ? "Grid finished" : "Building the grid"}
+            {mode === "locked" ? "Stored (locked)" : mode === "finished" ? "Grid finished" : "Building the grid"}
           </InfoCard>
           <InfoCard icon={Clock3} tone="info" label="Saving">
-            <SaveStatus save={save} idleText={puzzleId ? "Saved" : "Starts saving when you type"} />
+            <SaveStatus save={save} idleText={puzzleId ? "Saved" : "Starts saving when you type"} onRetry={() => void retry()} />
           </InfoCard>
 
           {mode === "editing" ? (
@@ -511,10 +607,12 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
                 <Keyboard aria-hidden className="size-5" /> Keyboard tips
               </summary>
               <ul className="mt-3 list-disc space-y-1 pl-5">
-                <li>Type letters; the cursor moves on by itself.</li>
-                <li>Click a square to select it. Click it again, or press the space bar, to switch across/down.</li>
-                <li>Arrow keys move around. Backspace deletes and steps back.</li>
-                <li>Leave squares empty where you want black squares; they appear when you click Done.</li>
+                <li>Type letters; the cursor moves on by itself. After column 12 it carries on at the start of the next row.</li>
+                <li>Space bar: leaves the square blank (it turns black when you click Done) and moves on.</li>
+                <li>Enter, Tab or Forward: moves on a square without changing it. Back (or Shift+Tab) moves back.</li>
+                <li>Backspace deletes and steps back.</li>
+                <li>Click a square to select it; click it again to switch between across and down.</li>
+                <li>With a keyboard, the arrow keys move around too. On an iPad, the ˄ ˅ arrows above the keyboard move back and forward.</li>
               </ul>
             </details>
           ) : null}
@@ -555,7 +653,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
         ) : null}
         {mode === "locked" && puzzleId ? (
           <ButtonLink href={`/puzzles/${puzzleId}/review`} size="lg">
-            View Published Puzzle
+            View Stored Puzzle
           </ButtonLink>
         ) : null}
       </div>

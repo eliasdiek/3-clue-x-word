@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     default: "3-Clue X-Word — Puzzle Administration",
     template: "%s · 3-Clue X-Word",
   },
-  description: "Create, clue and publish 3-Clue X-Word crossword puzzles.",
+  description: "Create, clue and store 3-Clue X-Word crossword puzzles.",
   robots: { index: false, follow: false },
 };
 

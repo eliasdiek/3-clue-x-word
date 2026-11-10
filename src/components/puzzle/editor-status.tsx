@@ -10,14 +10,29 @@ export type SaveState =
   | { state: "saved"; at: Date }
   | { state: "error"; message: string; blocking: boolean };
 
-export function SaveStatus({ save, idleText = "Saved" }: { save: SaveState; idleText?: string }) {
+export function SaveStatus({
+  save,
+  idleText = "Saved",
+  onRetry,
+}: {
+  save: SaveState;
+  idleText?: string;
+  /** Shown as a "try again" button after a failure that can be retried. */
+  onRetry?: () => void;
+}) {
   switch (save.state) {
     case "saving":
       return <>Saving…</>;
     case "unsaved":
       return <>Unsaved changes…</>;
     case "error":
-      return <span className="text-danger-ink">Not saved</span>;
+      return onRetry && !save.blocking ? (
+        <button type="button" onClick={onRetry} className="text-left text-danger-ink underline underline-offset-2">
+          Not saved: try again
+        </button>
+      ) : (
+        <span className="text-danger-ink">Not saved</span>
+      );
     case "saved":
       // Formatted in the viewer's time zone, which can differ from the server's.
       return <time suppressHydrationWarning>Saved {formatDateTime(save.at)}</time>;

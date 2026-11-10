@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Build Grid", "Add Clues", "Review & Publish"] as const;
+const STEPS = ["Build Grid", "Add Clues", "Review & Store"] as const;
 type Step = 1 | 2 | 3;
 
 /**

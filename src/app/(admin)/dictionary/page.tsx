@@ -25,7 +25,7 @@ export default function DictionaryPage({ searchParams }: { searchParams: SearchP
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Clue Dictionary"
-        description="Every word from your published puzzles, with the clues it was given. Added automatically when you publish."
+        description="Every word from your stored puzzles, with the clues it was given. Added automatically when you store a puzzle."
       />
       <Suspense fallback={<div className="h-12" />}>
         <ListFilters searchLabel="Search words" select={{ name: "sort", label: "Sort", options: SORTS }} />
@@ -63,7 +63,7 @@ async function DictionaryRows({ searchParams }: { searchParams: SearchParams }) 
         <p className="max-w-lg text-lg text-ink-muted">
           {search
             ? `No words start with “${search}”.`
-            : "The dictionary is empty. It fills itself with every word and its three clues each time you publish a puzzle."}
+            : "The dictionary is empty. It fills itself with every word and its three clues each time you store a puzzle."}
         </p>
       </Card>
     );
@@ -134,7 +134,7 @@ async function DictionaryRows({ searchParams }: { searchParams: SearchParams }) 
                           id={set.id}
                           word={word.normalized_word}
                           clues={{ harder: set.harder_clue, medium: set.medium_clue, easier: set.easier_clue }}
-                          usedIn={numbers.length ? `Used in puzzle ${numbers.map((n) => `#${n}`).join(", ")}` : "Not in any published puzzle now"}
+                          usedIn={numbers.length ? `Used in puzzle ${numbers.map((n) => `#${n}`).join(", ")}` : "Not in any stored puzzle now"}
                         />
                       );
                     })

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen, CircleCheck, Clock3, Hash, ListChecks, Lock, PencilLine } from "lucide-react";
 import { CLUE_LEVEL_LABELS, CLUE_LEVEL_STYLES, CLUE_LEVELS, CLUE_MAX_LENGTH, SCORING_RULES, type ClueLevel } from "@/lib/constants/game";
 import { checkClues, saveClues } from "@/lib/puzzle/clue-actions";
@@ -13,6 +14,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, PageHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { callAction, RETRY_DELAY_MS, wait } from "./call-action";
 import { CrosswordBoard } from "./crossword-board";
 import { InfoCard, SaveStatus, type SaveState } from "./editor-status";
 import { PuzzleSteps } from "./puzzle-steps";
@@ -71,6 +73,9 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
   const savingRef = useRef<Promise<boolean> | null>(null);
   const blockedRef = useRef(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  /** The last failure was the clue check, so "Try again" redoes it. */
+  const retryCheckRef = useRef(false);
+  const router = useRouter();
 
   const analysis = useMemo(() => analyzeGrid(initial.grid), [initial.grid]);
   const wordsById = useMemo(() => new Map(initial.words.map((w) => [w.wordId, w])), [initial.words]);
@@ -82,17 +87,25 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
   const persist = useCallback(async (): Promise<boolean> => {
     if (savingRef.current) await savingRef.current;
     if (blockedRef.current) return false;
-    if (dirtyIds().length === 0) return true;
+    if (dirtyIds().length === 0) {
+      // Nothing left to save: clear an earlier error so "Try again" is seen to work.
+      setSave((s) => (s.state === "error" ? { state: "saved", at: new Date() } : s));
+      return true;
+    }
 
     const run = (async () => {
       let ids = dirtyIds();
       while (ids.length) {
         const snapshot = ids.map((id) => [id, versions.current.get(id)!] as const);
         setSave({ state: "saving" });
-        const result = await saveClues({
-          puzzleId: initial.puzzleId,
-          clues: ids.map((wordId) => ({ wordId, ...cluesRef.current[wordId] })),
-        });
+        const clues = ids.map((wordId) => ({ wordId, ...cluesRef.current[wordId] }));
+        const attempt = () => callAction(() => saveClues({ puzzleId: initial.puzzleId, clues }));
+        let result = await attempt();
+        // A brief network problem: try once more before reporting it.
+        if (!result.ok && result.reason === "error") {
+          await wait(RETRY_DELAY_MS);
+          result = await attempt();
+        }
         if (!result.ok) {
           const blocking = result.reason !== "error" && result.reason !== "invalid";
           blockedRef.current = blocking;
@@ -141,17 +154,38 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
   async function onCheck() {
     setChecking(true);
     try {
-      if (!(await persist())) return;
-      const result = await checkClues({ puzzleId: initial.puzzleId });
+      if (!(await persist())) {
+        retryCheckRef.current = true;
+        return;
+      }
+      const result = await callAction(() => checkClues({ puzzleId: initial.puzzleId }));
       if (!result.ok) {
-        setSave({ state: "error", message: result.message, blocking: result.reason !== "error" });
+        const blocking = result.reason !== "error";
+        blockedRef.current = blocking;
+        retryCheckRef.current = !blocking;
+        setSave({ state: "error", message: result.message, blocking });
+        return;
+      }
+      retryCheckRef.current = false;
+      setReady(result.complete);
+      if (result.complete) {
+        // Every word has its clues: straight on to the last step.
+        router.push(reviewHref);
         return;
       }
       setReport({ complete: result.complete, lines: result.lines });
-      setReady(result.complete);
       requestAnimationFrame(() => reportRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
     } finally {
       setChecking(false);
+    }
+  }
+
+  /** "Try again" after a failure: save, and redo the check if that failed. */
+  async function retry() {
+    const saved = await persist();
+    if (saved && retryCheckRef.current) {
+      retryCheckRef.current = false;
+      await onCheck();
     }
   }
 
@@ -210,17 +244,34 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
           to update it. Your clues are kept for words that are still in the grid.
         </Alert>
       ) : null}
-      {locked ? <Alert tone="info">This puzzle has been published, so its clues are locked.</Alert> : null}
+      {locked ? <Alert tone="info">This puzzle has been stored, so its clues are locked.</Alert> : null}
       {save.state === "error" ? (
         <Alert tone="error">
           <p>{save.message}</p>
           <button
             type="button"
-            onClick={() => (save.blocking ? window.location.reload() : void persist())}
+            onClick={() => (save.blocking ? window.location.reload() : void retry())}
             className="mt-1 underline underline-offset-2"
           >
             {save.blocking ? "Reload the page" : "Try saving again"}
           </button>
+        </Alert>
+      ) : null}
+
+      {editable && total > 0 && completed === total ? (
+        <Alert tone="success">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p>Every word has its three clues. Next, check the finished puzzle and store it.</p>
+            <Button
+              icon={<ArrowRight aria-hidden className="size-5" />}
+              onClick={onCheck}
+              loading={checking}
+              loadingText="Checking clues…"
+              disabled={save.state === "error" && save.blocking}
+            >
+              Next: Review &amp; Store
+            </Button>
+          </div>
         </Alert>
       ) : null}
 
@@ -233,7 +284,7 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
           {completed} / {total}
         </InfoCard>
         <InfoCard icon={locked ? Lock : Clock3} tone="info" label="Saving">
-          {locked ? "Locked" : <SaveStatus save={save} />}
+          {locked ? "Locked" : <SaveStatus save={save} onRetry={() => void retry()} />}
         </InfoCard>
       </div>
 
@@ -329,7 +380,7 @@ export function ClueEditor({ initial }: { initial: ClueEditorInitial }) {
         ) : null}
         {(ready || locked) && save.state !== "unsaved" && save.state !== "saving" ? (
           <ButtonLink href={reviewHref} size="lg" icon={<ArrowRight aria-hidden className="size-5" />}>
-            {locked ? "View Published Puzzle" : "Next: Review & Publish"}
+            {locked ? "View Stored Puzzle" : "Next: Review & Store"}
           </ButtonLink>
         ) : null}
       </div>
@@ -415,22 +466,50 @@ function ClueInput({
   const length = value.length;
   const nearLimit = length >= CLUE_MAX_LENGTH - 5;
   const counterId = `${id}-count`;
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  // Grow to fit the whole clue, so long clues can be read and edited in full.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 4}px`;
+  }, [value]);
+
+  // Return moves on: Harder → Medium → Easier → the next word's Harder clue.
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    const fields = [...document.querySelectorAll<HTMLTextAreaElement>("textarea[data-clue-field]")];
+    const next = fields[fields.indexOf(event.currentTarget) + (event.shiftKey ? -1 : 1)];
+    if (next) {
+      next.focus();
+      next.setSelectionRange(next.value.length, next.value.length);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className={cn("text-sm font-bold xl:sr-only", style.text)}>
         {CLUE_LEVEL_LABELS[level]} clue ({SCORING_RULES.pointsPerLetter[level]} points){" "}
         <span className="sr-only">for {wordName}</span>
       </label>
-      <input
+      <textarea
+        ref={ref}
         id={id}
+        data-clue-field
+        rows={1}
         value={value}
         maxLength={CLUE_MAX_LENGTH}
         readOnly={!editable}
         autoComplete="off"
+        enterKeyHint="next"
         aria-describedby={counterId}
-        onChange={(event) => onChange(event.currentTarget.value)}
+        onKeyDown={onKeyDown}
+        // Clues are one line: line breaks pasted from a web page become spaces.
+        onChange={(event) => onChange(event.currentTarget.value.replace(/\s*[\r\n]+\s*/g, " "))}
         className={cn(
-          "h-12 w-full rounded-xl border-2 bg-surface px-3 text-base text-ink transition-colors outline-none",
+          "block min-h-12 w-full resize-none overflow-hidden rounded-xl border-2 bg-surface px-3 py-2.5 text-base leading-snug text-ink transition-colors outline-none",
           "placeholder:text-ink-muted/70 focus:ring-3 focus:ring-brand-ring",
           style.border,
           value.trim() ? "" : "bg-canvas",

@@ -25,7 +25,7 @@ export type CheckCluesResult =
 const MESSAGES: Record<ClueFailureReason, string> = {
   invalid: "Some clues couldn't be saved. Please check them and try again.",
   stale: "The word list has changed since this page was opened. Reload the page to see the latest words.",
-  locked: "Published puzzles are locked and can't be edited.",
+  locked: "Stored puzzles are locked and can't be edited.",
   "not-found": "This puzzle no longer exists.",
   error: "Something went wrong while saving. Your clues are still on screen; please try again.",
 };

@@ -4,6 +4,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/auth/dal";
 import { writeAuditLog } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
+import { chooseAutoTitle } from "./format";
 import { analyzeGrid, gridProblems, parseGrid, toEditableGrid } from "./grid";
 
 /**
@@ -32,7 +33,7 @@ export type FinishGridResult =
 const MESSAGES: Record<Exclude<GridFailureReason, "problems">, string> = {
   invalid: "The grid could not be read. Please reload the page and try again.",
   stale: "This puzzle was changed in another window or by someone else. Reload the page to see the latest version.",
-  locked: "Published puzzles are locked and can't be edited.",
+  locked: "Stored puzzles are locked and can't be edited.",
   "not-found": "This puzzle no longer exists.",
   error: "Something went wrong while saving. Your changes are still on screen; please try again.",
 };
@@ -128,14 +129,57 @@ export async function finishGrid(input: {
   if (error) return explain(error);
   const row = data?.[0];
   if (!row) return fail("error");
+
+  const firstAcross = analysis.words.filter((w) => w.direction === "across").sort((a, b) => a.number - b.number)[0];
+  const titled = firstAcross ? await giveAutoTitle(supabase, puzzleId, firstAcross.answer) : null;
   return {
     ok: true,
     puzzleId,
-    updatedAt: row.updated_at,
+    updatedAt: titled ?? row.updated_at,
     wordCount: row.word_count,
     keptClueCount: row.kept_clue_count,
     droppedClueCount: row.dropped_clue_count,
   };
+}
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/** Titles given automatically: a first across word, maybe with a number (JEALOUSY, JEALOUSY2). */
+const AUTO_TITLE = /^[A-Z]+\d*$/;
+
+/**
+ * Names the puzzle after its first across word so it's easy to find again
+ * (the client's request). A title someone typed is kept; an automatic one is
+ * updated if the first word changed. Returns the puzzle's new updated_at, or
+ * null if nothing changed.
+ */
+async function giveAutoTitle(supabase: Supabase, puzzleId: string, answer: string): Promise<string | null> {
+  try {
+    const { data: puzzle } = await supabase.from("puzzles").select("title").eq("id", puzzleId).maybeSingle();
+    const current = puzzle?.title?.trim() ?? "";
+    if (current && !AUTO_TITLE.test(current)) return null; // typed by someone: keep it
+    if (current && new RegExp(`^${answer}\\d*$`).test(current)) return null; // already named after this word
+
+    const { data: others } = await supabase
+      .from("puzzles")
+      .select("title")
+      .neq("id", puzzleId)
+      .ilike("title", `${answer}%`);
+    const title = chooseAutoTitle(
+      answer,
+      (others ?? []).map((o) => o.title ?? "").filter((t) => new RegExp(`^${answer}\\d*$`, "i").test(t)),
+    );
+    const { data, error } = await supabase.from("puzzles").update({ title }).eq("id", puzzleId).select("updated_at").maybeSingle();
+    if (error) {
+      console.error("[puzzle] auto title failed:", error.code, error.message);
+      return null;
+    }
+    return data?.updated_at ?? null;
+  } catch (error) {
+    // A missing title is no reason to fail Done.
+    console.error("[puzzle] auto title failed:", error);
+    return null;
+  }
 }
 
 function explain(error: PostgrestError) {

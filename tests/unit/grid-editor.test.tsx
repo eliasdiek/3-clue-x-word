@@ -65,13 +65,57 @@ describe("GridEditor typing", () => {
     expect(cell(1, 4)).toHaveAttribute("aria-selected", "true");
   });
 
-  it("switches to down with the space bar and the toggle", async () => {
+  it("switches to down with the toggle", async () => {
     const user = await setup();
-    await user.keyboard(" ");
+    await user.click(screen.getByRole("button", { name: "down" }));
+    await user.click(input());
     await user.keyboard("dog");
     expect(cell(3, 1)).toHaveAccessibleName("Row 3, column 1: G");
     await user.click(screen.getByRole("button", { name: "across" }));
     expect(screen.getByRole("button", { name: "across" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("the space bar leaves a blank square and moves on, clearing any letter", async () => {
+    const user = await setup();
+    await user.keyboard("c a{ArrowLeft}{ArrowLeft}{ArrowLeft} ");
+    expect(cell(1, 1)).toHaveAccessibleName("Row 1, column 1: empty");
+    expect(cell(1, 2)).toHaveAccessibleName("Row 1, column 2: empty");
+    expect(cell(1, 3)).toHaveAccessibleName("Row 1, column 3: A");
+    expect(cell(1, 2)).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("carries on at the start of the next row after column 12", async () => {
+    const user = await setup();
+    await user.keyboard("abcdefghijklmn");
+    expect(cell(1, 12)).toHaveAccessibleName("Row 1, column 12: L");
+    expect(cell(2, 1)).toHaveAccessibleName("Row 2, column 1: M");
+    expect(cell(2, 2)).toHaveAccessibleName("Row 2, column 2: N");
+    await user.keyboard("{Backspace}{Backspace}{Backspace}");
+    expect(cell(1, 12)).toHaveAccessibleName("Row 1, column 12: empty");
+  });
+
+  it("Enter, Tab and the Forward/Back buttons move without changing letters", async () => {
+    const user = await setup();
+    await user.keyboard("cat{ArrowLeft}{ArrowLeft}{ArrowLeft}{Enter}{Tab}");
+    expect(cell(1, 3)).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(cell(1, 2)).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(cell(1, 1)).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("button", { name: "Forward" }));
+    expect(cell(1, 2)).toHaveAttribute("aria-selected", "true");
+    expect(cell(1, 1)).toHaveAccessibleName("Row 1, column 1: C");
+    expect(cell(1, 2)).toHaveAccessibleName("Row 1, column 2: A");
+  });
+
+  it("the iPad's previous/next field arrows step back and forward", async () => {
+    const user = await setup();
+    await user.keyboard("ca");
+    screen.getByLabelText("Previous square").focus();
+    await waitFor(() => expect(cell(1, 2)).toHaveAttribute("aria-selected", "true"));
+    expect(input()).toHaveFocus();
+    screen.getByLabelText("Next square").focus();
+    await waitFor(() => expect(cell(1, 3)).toHaveAttribute("aria-selected", "true"));
   });
 
   it("deletes with Backspace and steps back", async () => {
@@ -120,7 +164,7 @@ describe("GridEditor Done", () => {
       droppedClueCount: 0,
     });
     const user = await setup();
-    await user.keyboard("cat{ArrowLeft}{ArrowLeft}{ArrowLeft} ");
+    await user.keyboard("cat{ArrowLeft}{ArrowLeft}{ArrowLeft}");
     await user.keyboard("{ArrowDown}ow");
     await user.click(screen.getByRole("button", { name: "Done / Generate Word List" }));
 

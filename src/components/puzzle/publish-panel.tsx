@@ -48,7 +48,7 @@ export function PublishPanel({
   if (published) {
     return (
       <Alert tone="success">
-        Published as puzzle #{published}. It is now locked and available to the app.
+        Stored as puzzle #{published}. It is now locked and available to the app.
       </Alert>
     );
   }
@@ -73,25 +73,25 @@ export function PublishPanel({
         disabled={!canPublish}
         onClick={() => setConfirming(true)}
       >
-        Publish Puzzle
+        Store Puzzle
       </Button>
-      {!canPublish ? <p className="text-sm text-ink-muted">Fix the problems above to publish.</p> : null}
+      {!canPublish ? <p className="text-sm text-ink-muted">Fix the problems above to store it.</p> : null}
 
       <ConfirmDialog
         open={confirming}
-        title={nextNumber ? `Publish as puzzle #${nextNumber}?` : "Publish this puzzle?"}
+        title={nextNumber ? `Store as puzzle #${nextNumber}?` : "Store this puzzle?"}
         description={
           <>
             <p>
-              It gets the next puzzle number{nextNumber ? ` (#${nextNumber}, unless another puzzle is published first)` : ""}{" "}
-              and becomes available to the app.
+              It gets the next puzzle number{nextNumber ? ` (#${nextNumber}, unless another puzzle is stored first)` : ""}{" "}
+              and players get it automatically, in number order, after the puzzles before it.
             </p>
             <p className="mt-2">
-              Once published, its grid and clues are <strong>locked</strong> and can&apos;t be changed.
+              Once stored, its grid and clues are <strong>locked</strong> and can&apos;t be changed.
             </p>
           </>
         }
-        confirmLabel="Publish"
+        confirmLabel="Store"
         loading={pending}
         onCancel={() => setConfirming(false)}
         onConfirm={publish}

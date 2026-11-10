@@ -83,3 +83,13 @@ describe("buildPublishedPayload", () => {
     expect(payload.maxScore).toBe(payload.letterCount * 7);
   });
 });
+
+describe("chooseAutoTitle", () => {
+  it("names a puzzle after its first across word, adding a number when that name is taken", async () => {
+    const { chooseAutoTitle } = await import("@/lib/puzzle/format");
+    expect(chooseAutoTitle("JEALOUSY", [])).toBe("JEALOUSY");
+    expect(chooseAutoTitle("JEALOUSY", ["JEALOUSY"])).toBe("JEALOUSY2");
+    expect(chooseAutoTitle("JEALOUSY", ["jealousy", "JEALOUSY2"])).toBe("JEALOUSY3");
+    expect(chooseAutoTitle("HEAVE", ["JEALOUSY"])).toBe("HEAVE");
+  });
+});

@@ -43,3 +43,15 @@ export function clueCheckReport(words: ClueCheckItem[]): { ok: boolean; lines: s
     });
   return problems.length === 0 ? { ok: true, lines: [ALL_CLUES_PRESENT_MESSAGE] } : { ok: false, lines: problems };
 }
+
+/**
+ * An automatic puzzle title: the first across word, with a number added when
+ * another puzzle already has that name (JEALOUSY, then JEALOUSY2, JEALOUSY3…).
+ */
+export function chooseAutoTitle(answer: string, takenTitles: string[]): string {
+  const taken = new Set(takenTitles.map((t) => t.trim().toUpperCase()));
+  if (!taken.has(answer)) return answer;
+  let n = 2;
+  while (taken.has(`${answer}${n}`)) n++;
+  return `${answer}${n}`;
+}

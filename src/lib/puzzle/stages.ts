@@ -4,8 +4,8 @@ import type { PuzzleStage } from "@/lib/supabase/database.types";
 export const STAGES: Record<PuzzleStage, { label: string; badge: string }> = {
   grid: { label: "Building grid", badge: "bg-warning text-warning-ink" },
   clues: { label: "Adding clues", badge: "bg-easier text-easier-ink" },
-  ready: { label: "Ready to publish", badge: "bg-brand-soft text-brand" },
-  published: { label: "Published", badge: "bg-success text-success-ink" },
+  ready: { label: "Ready to store", badge: "bg-brand-soft text-brand" },
+  published: { label: "Stored", badge: "bg-success text-success-ink" },
   archived: { label: "Archived", badge: "bg-line text-ink-muted" },
 };
 
@@ -13,8 +13,8 @@ export const STAGE_FILTERS = [
   { value: "", label: "All active puzzles" },
   { value: "grid", label: "Building grid" },
   { value: "clues", label: "Adding clues" },
-  { value: "ready", label: "Ready to publish" },
-  { value: "published", label: "Published" },
+  { value: "ready", label: "Ready to store" },
+  { value: "published", label: "Stored" },
   { value: "archived", label: "Archived" },
 ] as const;
 

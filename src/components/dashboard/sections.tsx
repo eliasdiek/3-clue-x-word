@@ -117,12 +117,12 @@ export function PuzzleStock({
       <SectionTitle icon={Rocket}>Puzzle stock</SectionTitle>
       <p className="text-4xl font-extrabold text-navy tabular-nums">{published}</p>
       <p className="text-base text-ink">
-        published puzzle{published === 1 ? "" : "s"}: enough for <strong>{published}</strong> day{published === 1 ? "" : "s"} at one
+        stored puzzle{published === 1 ? "" : "s"}: enough for <strong>{published}</strong> day{published === 1 ? "" : "s"} at one
         puzzle a day.
       </p>
       <dl className="mt-4 divide-y divide-line text-base">
         <div className="flex justify-between gap-3 py-2">
-          <dt className="text-ink-muted">Ready to publish</dt>
+          <dt className="text-ink-muted">Ready to store</dt>
           <dd className="font-bold text-navy">
             {ready ? (
               <Link href="/puzzles?stage=ready" className="text-brand hover:underline">
@@ -134,7 +134,7 @@ export function PuzzleStock({
           </dd>
         </div>
         <div className="flex justify-between gap-3 py-2">
-          <dt className="text-ink-muted">Last published</dt>
+          <dt className="text-ink-muted">Last stored</dt>
           <dd className="font-bold text-navy">{lastPublished ? `#${lastPublished.number}, ${lastPublished.when}` : "Nothing yet"}</dd>
         </div>
         <div className="flex justify-between gap-3 py-2">

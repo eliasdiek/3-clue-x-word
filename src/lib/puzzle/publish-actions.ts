@@ -32,7 +32,7 @@ export async function publishPuzzle(input: { puzzleId: string; reviewedUpdatedAt
     return {
       ok: false,
       reason: "already-published",
-      message: `This puzzle has already been published as #${puzzle.puzzleNumber}.`,
+      message: `This puzzle has already been stored as #${puzzle.puzzleNumber}.`,
     };
   }
   if (new Date(puzzle.updatedAt).getTime() !== new Date(input.reviewedUpdatedAt).getTime()) {
@@ -45,7 +45,7 @@ export async function publishPuzzle(input: { puzzleId: string; reviewedUpdatedAt
 
   const problems = validateForPublish(puzzle);
   if (problems.length) {
-    return { ok: false, reason: "problems", message: "This puzzle can't be published yet:", problems };
+    return { ok: false, reason: "problems", message: "This puzzle can't be stored yet:", problems };
   }
 
   const payload = buildPublishedPayload(puzzle) as unknown as Json;
@@ -56,7 +56,7 @@ export async function publishPuzzle(input: { puzzleId: string; reviewedUpdatedAt
   });
   if (error) return explain(error);
   const row = data?.[0];
-  if (!row) return { ok: false, reason: "error", message: "Publishing failed. Nothing was published; please try again." };
+  if (!row) return { ok: false, reason: "error", message: "Storing failed. Nothing was stored; please try again." };
   return { ok: true, puzzleNumber: row.puzzle_number, publishedAt: row.published_at };
 }
 
@@ -71,9 +71,9 @@ function explain(error: PostgrestError): PublishResult {
     case "23505":
       return { ok: false, reason: "already-published", message: error.message };
     case "23514":
-      return { ok: false, reason: "problems", message: "This puzzle can't be published yet:", problems: [error.message] };
+      return { ok: false, reason: "problems", message: "This puzzle can't be stored yet:", problems: [error.message] };
     default:
       console.error("[publish] failed:", error.code, error.message);
-      return { ok: false, reason: "error", message: "Publishing failed. Nothing was published; please try again." };
+      return { ok: false, reason: "error", message: "Storing failed. Nothing was stored; please try again." };
   }
 }

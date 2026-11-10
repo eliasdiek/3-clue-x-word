@@ -29,8 +29,8 @@ describe("PublishPanel", () => {
   it("asks for confirmation, naming the expected number and the lock", async () => {
     const user = userEvent.setup();
     render(<PublishPanel {...PROPS} />);
-    await user.click(screen.getByRole("button", { name: "Publish Puzzle" }));
-    const dialog = screen.getByRole("dialog", { hidden: true, name: "Publish as puzzle #12?" });
+    await user.click(screen.getByRole("button", { name: "Store Puzzle" }));
+    const dialog = screen.getByRole("dialog", { hidden: true, name: "Store as puzzle #12?" });
     expect(dialog).toHaveTextContent("locked");
     expect(publishPuzzle).not.toHaveBeenCalled();
   });
@@ -39,10 +39,10 @@ describe("PublishPanel", () => {
     publishPuzzle.mockResolvedValue({ ok: true, puzzleNumber: 13, publishedAt: "2026-11-08T10:05:00Z" });
     const user = userEvent.setup();
     render(<PublishPanel {...PROPS} />);
-    await user.click(screen.getByRole("button", { name: "Publish Puzzle" }));
-    await user.click(screen.getByRole("button", { name: "Publish", hidden: true }));
+    await user.click(screen.getByRole("button", { name: "Store Puzzle" }));
+    await user.click(screen.getByRole("button", { name: "Store", hidden: true }));
     expect(publishPuzzle).toHaveBeenCalledWith({ puzzleId: "p-1", reviewedUpdatedAt: "2026-11-08T10:00:00Z" });
-    expect(await screen.findByText(/Published as puzzle #13/)).toBeInTheDocument();
+    expect(await screen.findByText(/Stored as puzzle #13/)).toBeInTheDocument();
     expect(refresh).toHaveBeenCalled();
   });
 
@@ -55,14 +55,14 @@ describe("PublishPanel", () => {
     });
     const user = userEvent.setup();
     render(<PublishPanel {...PROPS} />);
-    await user.click(screen.getByRole("button", { name: "Publish Puzzle" }));
-    await user.click(screen.getByRole("button", { name: "Publish", hidden: true }));
+    await user.click(screen.getByRole("button", { name: "Store Puzzle" }));
+    await user.click(screen.getByRole("button", { name: "Store", hidden: true }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Word 4d, SASH has no clues");
     expect(refresh).not.toHaveBeenCalled();
   });
 
   it("can't be clicked while there are problems", () => {
     render(<PublishPanel {...PROPS} canPublish={false} />);
-    expect(screen.getByRole("button", { name: "Publish Puzzle" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Store Puzzle" })).toBeDisabled();
   });
 });

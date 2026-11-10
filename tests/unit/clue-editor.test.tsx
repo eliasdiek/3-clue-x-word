@@ -7,6 +7,8 @@ import { CLUE_MAX_LENGTH } from "@/lib/constants/game";
 import { emptyGrid, toFinishedGrid } from "@/lib/puzzle/grid";
 
 const saveClues = vi.fn();
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 const checkClues = vi.fn();
 vi.mock("@/lib/puzzle/clue-actions", () => ({
   saveClues: (...args: unknown[]) => saveClues(...args),
@@ -123,16 +125,55 @@ describe("ClueEditor", () => {
     expect(screen.queryByRole("link", { name: /Next: Review/ })).toBeNull();
   });
 
-  it("confirms a complete puzzle and offers the next step", async () => {
+  it("goes straight on to Review & Store when every word has its clues", async () => {
     checkClues.mockResolvedValue({ ok: true, complete: true, lines: ["All words are present and have 3 clues"] });
     const user = userEvent.setup();
     render(<ClueEditor initial={INITIAL} />);
     await user.click(screen.getByRole("button", { name: "Done / Check Clues" }));
-    expect(await screen.findByText("All words are present and have 3 clues")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Next: Review/ })).toHaveAttribute(
-      "href",
-      "/puzzles/33333333-3333-4333-8333-333333333333/review",
-    );
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/puzzles/33333333-3333-4333-8333-333333333333/review"));
+  });
+
+  it("shows the next step at the top once every word has three clues", async () => {
+    checkClues.mockResolvedValue({ ok: true, complete: true, lines: [] });
+    const user = userEvent.setup();
+    const done = { harder: "h", medium: "m", easier: "e" };
+    render(<ClueEditor initial={{ ...INITIAL, words: INITIAL.words.map((w) => ({ ...w, ...done })) }} />);
+    await user.click(screen.getByRole("button", { name: "Next: Review & Store" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/puzzles/33333333-3333-4333-8333-333333333333/review"));
+  });
+
+  it("Return moves to the next clue: Harder, Medium, Easier, then the next word", async () => {
+    const user = userEvent.setup();
+    render(<ClueEditor initial={INITIAL} />);
+    await user.click(field("Harder", "1a CAT"));
+    await user.keyboard("{Enter}");
+    expect(field("Medium", "1a CAT")).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(field("Easier", "1a CAT")).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(field("Harder", "1d COW")).toHaveFocus();
+    expect(field("Harder", "1a CAT")).toHaveValue("Feline");
+  });
+
+  it("turns pasted line breaks into spaces", async () => {
+    const user = userEvent.setup();
+    render(<ClueEditor initial={INITIAL} />);
+    await user.clear(field("Harder", "1a CAT"));
+    await user.paste("A small\ndomesticated\r\n carnivore");
+    expect(field("Harder", "1a CAT")).toHaveValue("A small domesticated carnivore");
+  });
+
+  it("Try saving again re-runs a check that failed", async () => {
+    checkClues
+      .mockResolvedValueOnce({ ok: false, reason: "error", message: "Something went wrong while saving." })
+      .mockResolvedValueOnce({ ok: true, complete: false, lines: ["Word 1d, COW has no clues"] });
+    const user = userEvent.setup();
+    render(<ClueEditor initial={INITIAL} />);
+    await user.click(screen.getByRole("button", { name: "Done / Check Clues" }));
+    await user.click(await screen.findByRole("button", { name: "Try saving again" }));
+    expect(await screen.findByText("Word 1d, COW has no clues")).toBeInTheDocument();
+    expect(checkClues).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(/Not saved/)).toBeNull();
   });
 
   it("filters to the words that still need clues", async () => {

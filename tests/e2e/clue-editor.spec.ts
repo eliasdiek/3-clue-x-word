@@ -22,7 +22,7 @@ test("add clues, see the report, and finish", async ({ page }) => {
   await page.getByRole("gridcell", { name: /^Row 1, column 1:/ }).click();
   await page.keyboard.type("CAT");
   await page.getByRole("gridcell", { name: /^Row 2, column 1:/ }).click();
-  await page.keyboard.press("Space");
+  await page.getByRole("button", { name: "down" }).click();
   await page.keyboard.type("OW");
   await expect(page).toHaveURL(/\/puzzles\/[0-9a-f-]{36}\/grid$/);
   await page.getByRole("button", { name: "Done / Generate Word List" }).click();
@@ -41,18 +41,16 @@ test("add clues, see the report, and finish", async ({ page }) => {
   await clue(page, "Harder", "1d COW").fill("Bovine");
   await clue(page, "Medium", "1d COW").fill("It says moo");
   await clue(page, "Easier", "1d COW").fill("Farm animal");
-  await page.getByRole("button", { name: "Done / Check Clues" }).click();
-  await expect(page.getByText("All words are present and have 3 clues")).toBeVisible();
+  // Complete: straight on to Review & Store, ready to store (but don't store here).
+  await page.getByRole("button", { name: "Next: Review & Store" }).click();
+  await expect(page).toHaveURL(/\/review$/);
+  await expect(page.getByText("This puzzle is ready to store")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Store Puzzle" })).toBeEnabled();
 
-  // Saved: a reload shows the clues.
-  await page.reload();
+  // Saved: going back shows the clues.
+  await page.getByRole("link", { name: "Edit Clues" }).click();
   await expect(clue(page, "Easier", "1d COW")).toHaveValue("Farm animal");
   await expect(page.getByText("2 / 2")).toBeVisible();
-
-  // Review shows everything and is ready to publish (but don't publish here).
-  await page.getByRole("link", { name: "Next: Review & Publish" }).click();
-  await expect(page.getByText("This puzzle is ready to publish")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Publish Puzzle" })).toBeEnabled();
 });
 
 /**
@@ -62,13 +60,13 @@ test("add clues, see the report, and finish", async ({ page }) => {
 test("publish a reviewed puzzle", async ({ page }) => {
   test.skip(process.env.E2E_ALLOW_PUBLISH !== "1", "Set E2E_ALLOW_PUBLISH=1 (test databases only)");
   await logIn(page, "/puzzles");
-  const readyRow = page.getByRole("row").filter({ hasText: "Ready to publish" }).first();
+  const readyRow = page.getByRole("row").filter({ hasText: "Ready to store" }).first();
   await readyRow.getByRole("link", { name: /^Open/ }).click();
-  await page.getByRole("link", { name: "Next: Review & Publish" }).click();
-  await page.getByRole("button", { name: "Publish Puzzle" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Publish" }).click();
-  await expect(page.getByText(/Published as puzzle #\d+/).first()).toBeVisible();
+  await page.getByRole("link", { name: "Next: Review & Store" }).click();
+  await page.getByRole("button", { name: "Store Puzzle" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Store" }).click();
+  await expect(page.getByText(/Stored as puzzle #\d+/).first()).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: /^Puzzle #\d+$/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Publish Puzzle" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Store Puzzle" })).toHaveCount(0);
 });

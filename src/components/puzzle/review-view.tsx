@@ -47,7 +47,7 @@ export function ReviewView({ puzzle, problems, nextNumber, reusedWordCount }: Re
         : "All words are new",
     ],
     ["Validation", problems.length ? `${problems.length} problem${problems.length === 1 ? "" : "s"}` : "Passed"],
-    ["Status", published ? `Published ${formatDateTime(puzzle.publishedAt!)}` : "Not published"],
+    ["Status", published ? `Stored ${formatDateTime(puzzle.publishedAt!)}` : "Not stored yet"],
   ];
 
   const base = `/puzzles/${puzzle.id}`;
@@ -55,7 +55,7 @@ export function ReviewView({ puzzle, problems, nextNumber, reusedWordCount }: Re
     <div className="flex flex-col gap-6">
       <PageHeader
         title={puzzle.puzzleNumber ? `Puzzle #${puzzle.puzzleNumber}` : "Draft Puzzle"}
-        description="Review & publish: check the finished puzzle before it goes to the app."
+        description="Review & store: check the finished puzzle, then store it. Players get stored puzzles in number order."
       />
       <PuzzleSteps
         current={3}
@@ -65,11 +65,11 @@ export function ReviewView({ puzzle, problems, nextNumber, reusedWordCount }: Re
 
       {published ? (
         <Alert tone="success">
-          Published as puzzle #{puzzle.puzzleNumber}. Its grid and clues are locked, and it is available to the app.
+          Stored as puzzle #{puzzle.puzzleNumber}. Its grid and clues are locked, and it is available to the app.
         </Alert>
       ) : problems.length ? (
         <Alert tone="error">
-          <p>This puzzle can&apos;t be published yet:</p>
+          <p>This puzzle can&apos;t be stored yet:</p>
           <ul className="mt-1 list-disc pl-5 font-normal">
             {problems.map((p) => (
               <li key={p}>{p}</li>
@@ -77,7 +77,7 @@ export function ReviewView({ puzzle, problems, nextNumber, reusedWordCount }: Re
           </ul>
         </Alert>
       ) : (
-        <Alert tone="success">All words are present and have 3 clues. This puzzle is ready to publish.</Alert>
+        <Alert tone="success">All words are present and have 3 clues. This puzzle is ready to store.</Alert>
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,44rem)_minmax(18rem,1fr)]">
