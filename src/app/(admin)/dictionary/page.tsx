@@ -13,10 +13,11 @@ export const metadata: Metadata = { title: "Clue Dictionary" };
 
 const PAGE_SIZE = 25;
 const SORTS = [
-  { value: "", label: "Most used first" },
-  { value: "az", label: "A to Z" },
+  { value: "", label: "A to Z" },
+  { value: "used", label: "Most used first" },
   { value: "recent", label: "Recently used first" },
 ] as const;
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 type SearchParams = Promise<{ q?: string; sort?: string; page?: string }>;
 
@@ -25,10 +26,13 @@ export default function DictionaryPage({ searchParams }: { searchParams: SearchP
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Clue Dictionary"
-        description="Every word from your stored puzzles, with the clues it was given. Added automatically when you store a puzzle."
+        description="Every word you have written three clues for, with its clues. Added automatically as you write clues, and filled in for you when a word is used again."
       />
       <Suspense fallback={<div className="h-12" />}>
         <ListFilters searchLabel="Search words" select={{ name: "sort", label: "Sort", options: SORTS }} />
+      </Suspense>
+      <Suspense fallback={<div className="h-11" />}>
+        <LetterIndex searchParams={searchParams} />
       </Suspense>
       <Suspense fallback={<DictionarySkeleton />}>
         <DictionaryRows searchParams={searchParams} />
@@ -49,9 +53,9 @@ async function DictionaryRows({ searchParams }: { searchParams: SearchParams }) 
     .select("id, normalized_word, word_length, clue_set_count, usage_count, last_used_at", { count: "exact" })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (search) query = query.like("normalized_word", `${search}%`);
-  if (sort === "az") query = query.order("normalized_word");
+  if (sort === "used") query = query.order("usage_count", { ascending: false }).order("normalized_word");
   else if (sort === "recent") query = query.order("last_used_at", { ascending: false, nullsFirst: false });
-  else query = query.order("usage_count", { ascending: false }).order("normalized_word");
+  else query = query.order("normalized_word"); // A to Z (also the old "az" links)
 
   const { data: words, count, error } = await query;
   if (error) throw new Error("We couldn't load the dictionary. Please refresh the page.");
@@ -63,7 +67,7 @@ async function DictionaryRows({ searchParams }: { searchParams: SearchParams }) 
         <p className="max-w-lg text-lg text-ink-muted">
           {search
             ? `No words start with “${search}”.`
-            : "The dictionary is empty. It fills itself with every word and its three clues each time you store a puzzle."}
+            : "The dictionary is empty. Words are added with their clues as soon as all three clues are written."}
         </p>
       </Card>
     );
@@ -116,11 +120,13 @@ async function DictionaryRows({ searchParams }: { searchParams: SearchParams }) 
                     {word.clue_set_count} clue set{word.clue_set_count === 1 ? "" : "s"}
                   </span>
                   <span className="text-base text-ink">
-                    Used {word.usage_count} time{word.usage_count === 1 ? "" : "s"}
+                    {word.usage_count
+                      ? `Used in ${word.usage_count} stored puzzle${word.usage_count === 1 ? "" : "s"}`
+                      : "Not in a stored puzzle yet"}
                   </span>
-                  <span className="text-base text-ink-muted">
-                    {word.last_used_at ? `Last used ${formatDateTime(word.last_used_at)}` : "Not used yet"}
-                  </span>
+                  {word.last_used_at ? (
+                    <span className="text-base text-ink-muted">Last used {formatDateTime(word.last_used_at)}</span>
+                  ) : null}
                   <ChevronDown aria-hidden className="ml-auto size-5 text-ink-muted transition-transform group-open:rotate-180" />
                 </summary>
                 <div className="flex flex-col gap-3 bg-canvas/60 px-5 pt-1 pb-5">
@@ -200,6 +206,47 @@ function PageLink({ href, disabled, label, children }: { href: string; disabled:
     <Link href={href} className={cn(classes, "hover:border-brand hover:text-brand")} aria-label={label}>
       {children}
     </Link>
+  );
+}
+
+/** A–Z index: shows the words starting with one letter (the search box does the same for longer starts). */
+async function LetterIndex({ searchParams }: { searchParams: SearchParams }) {
+  const { q = "", sort = "" } = await searchParams;
+  const current = q.trim().toUpperCase();
+  const href = (letter: string) => {
+    const params = new URLSearchParams();
+    if (letter) params.set("q", letter);
+    if (sort) params.set("sort", sort);
+    const qs = params.toString();
+    return qs ? `/dictionary?${qs}` : "/dictionary";
+  };
+  const item = "flex h-10 min-w-10 items-center justify-center rounded-lg px-2 text-base font-bold transition-colors";
+  return (
+    <nav aria-label="Words by first letter">
+      <ul className="flex flex-wrap gap-1.5">
+        <li>
+          <Link
+            href={href("")}
+            aria-current={current === "" ? "page" : undefined}
+            className={cn(item, current === "" ? "bg-brand text-white" : "bg-surface text-navy hover:bg-brand-soft")}
+          >
+            All
+          </Link>
+        </li>
+        {LETTERS.map((letter) => (
+          <li key={letter}>
+            <Link
+              href={href(letter)}
+              aria-current={current === letter ? "page" : undefined}
+              aria-label={`Words starting with ${letter}`}
+              className={cn(item, current === letter ? "bg-brand text-white" : "bg-surface text-navy hover:bg-brand-soft")}
+            >
+              {letter}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 

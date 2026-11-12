@@ -85,7 +85,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
   const [problems, setProblems] = useState<string[]>([]);
   const [problemCells, setProblemCells] = useState<ReadonlySet<string>>(new Set());
   const [finishing, setFinishing] = useState(false);
-  const [summary, setSummary] = useState<{ wordCount: number; kept: number; dropped: number } | null>(null);
+  const [summary, setSummary] = useState<{ wordCount: number; kept: number; dropped: number; filled: number } | null>(null);
   const [wordsWithClues, setWordsWithClues] = useState(initial.wordsWithClues);
   const [confirm, setConfirm] = useState<{ kind: "clear" } | { kind: "lose-clues"; words: WordWithClues[] } | null>(null);
 
@@ -93,6 +93,8 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
   const gridRef = useRef(grid);
   const idRef = useRef(initial.puzzleId);
   const updatedAtRef = useRef(initial.updatedAt);
+  /** The grid as the server last had it, from this page's point of view. */
+  const serverGridRef = useRef<GridRows>(initial.grid);
   const editVersion = useRef(0);
   const savedVersion = useRef(0);
   const savingRef = useRef<Promise<boolean> | null>(null);
@@ -134,7 +136,12 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
         }
         setSave({ state: "saving" });
         const attempt = () =>
-          callAction(() => saveGridDraft({ puzzleId: idRef.current, grid: current, expectedUpdatedAt: updatedAtRef.current }));
+          callAction(() => saveGridDraft({
+              puzzleId: idRef.current,
+              grid: current,
+              expectedUpdatedAt: updatedAtRef.current,
+              baseGrid: serverGridRef.current,
+            }));
         let result = await attempt();
         // A brief network problem: try once more before reporting it.
         if (!result.ok && result.reason === "error") {
@@ -149,6 +156,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
         }
         adopt(result.puzzleId, result.updatedAt);
         savedVersion.current = version;
+        serverGridRef.current = current;
       }
       setSave({ state: "saved", at: new Date() });
       return true;
@@ -352,7 +360,7 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       const current = gridRef.current;
       const version = editVersion.current;
       const result = await callAction(() =>
-        finishGrid({ puzzleId: idRef.current, grid: current, expectedUpdatedAt: updatedAtRef.current }),
+        finishGrid({ puzzleId: idRef.current, grid: current, expectedUpdatedAt: updatedAtRef.current, baseGrid: serverGridRef.current }),
       );
       if (!result.ok) {
         if (result.reason === "problems") setProblems(("problems" in result && result.problems) || [result.message]);
@@ -367,11 +375,12 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       retryFinishRef.current = false;
       adopt(result.puzzleId, result.updatedAt);
       savedVersion.current = version;
+      serverGridRef.current = current;
       const words = analyzeGrid(current).words;
       setWordsWithClues(matchClueCarryOver(wordsWithClues, words).kept.map((k) => k.to));
       setGrid(toFinishedGrid(current));
       setMode("finished");
-      setSummary({ wordCount: result.wordCount, kept: result.keptClueCount, dropped: result.droppedClueCount });
+      setSummary({ wordCount: result.wordCount, kept: result.keptClueCount, dropped: result.droppedClueCount, filled: result.filledClueCount });
       setSave({ state: "saved", at: new Date() });
     } finally {
       setFinishing(false);
@@ -468,7 +477,17 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
           {summary.kept || summary.dropped ? (
             <p className="font-normal">
               Clues kept for {summary.kept} word{summary.kept === 1 ? "" : "s"}
-              {summary.dropped ? `; ${summary.dropped} word${summary.dropped === 1 ? "" : "s"} with clues were removed` : ""}.
+              {summary.dropped
+                ? `; ${summary.dropped} word${summary.dropped === 1 ? " is" : "s are"} no longer in the grid (finished clues stay in the Clue Dictionary)`
+                : ""}
+              .
+            </p>
+          ) : null}
+          {summary.filled ? (
+            <p className="font-normal">
+              {summary.filled} word{summary.filled === 1 ? " was" : "s were"} used before, so{" "}
+              {summary.filled === 1 ? "its" : "their"} most recent clues from the Clue Dictionary have been filled in. You can
+              change them on the next page.
             </p>
           ) : null}
         </Alert>
@@ -676,10 +695,13 @@ export function GridEditor({ initial }: { initial: GridEditorInitial }) {
       />
       <ConfirmDialog
         open={confirm?.kind === "lose-clues"}
-        title="Some clues will be removed"
+        title="Some words with clues will be removed"
         description={
           <>
-            <p>These words are no longer in the grid, so their clues will be deleted:</p>
+            <p>
+              These words are no longer in the grid, so they&apos;ll be taken out of this puzzle. Words with all three clues
+              stay in the Clue Dictionary, ready for next time; unfinished clues are deleted.
+            </p>
             <ul className="mt-2 list-disc pl-5 font-semibold text-ink">
               {confirm?.kind === "lose-clues"
                 ? confirm.words.map((w) => (

@@ -440,7 +440,8 @@ function ClueRow({
           wordName={`${label} ${word.answer}`}
           value={texts[level]}
           editable={editable}
-          onChange={(value) => onChange({ [level]: value, sourceClueSetId: null })}
+          // Keeps the link to the dictionary entry: edits are saved over it.
+          onChange={(value) => onChange({ [level]: value })}
         />
       ))}
     </li>

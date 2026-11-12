@@ -177,6 +177,38 @@ describe("GridEditor Done", () => {
     expect(screen.getByRole("button", { name: "Edit Grid" })).toBeInTheDocument();
   });
 
+  it("says how many words got their clues from the Clue Dictionary", async () => {
+    finishGrid.mockResolvedValue({
+      ok: true,
+      puzzleId: "p-1",
+      updatedAt: "2026-11-05T10:01:00Z",
+      wordCount: 2,
+      keptClueCount: 0,
+      droppedClueCount: 0,
+      filledClueCount: 2,
+    });
+    const user = await setup();
+    await user.keyboard("cat{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowDown}ow");
+    await user.click(screen.getByRole("button", { name: "Done / Generate Word List" }));
+    expect(await screen.findByText(/2 words were used before/)).toBeInTheDocument();
+  });
+
+  it("sends the grid it last saved, so clue saves elsewhere aren't mistaken for grid changes", async () => {
+    const start = toFinishedGrid(["CAT.........", ...emptyGrid().slice(1)]);
+    const user = userEvent.setup();
+    render(
+      <GridEditor
+        initial={{ ...NEW_PUZZLE, puzzleId: "p-1", updatedAt: "2026-11-05T10:00:00Z", finished: true, grid: start }}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Edit Grid" }));
+    await user.pointer({ keys: "[MouseLeft>]", target: cell(1, 5) });
+    await user.keyboard("s");
+    await waitFor(() => expect(saveGridDraft).toHaveBeenCalled(), { timeout: 3000 });
+    expect(saveGridDraft.mock.calls[0][0].baseGrid).toEqual(start);
+    expect(saveGridDraft.mock.calls[0][0].expectedUpdatedAt).toBe("2026-11-05T10:00:00Z");
+  });
+
   it("warns before clues are lost", async () => {
     const user = userEvent.setup();
     render(
@@ -196,7 +228,7 @@ describe("GridEditor Done", () => {
     await user.keyboard("{Delete}");
     await user.click(screen.getByRole("button", { name: "Done / Generate Word List" }));
 
-    const dialog = screen.getByRole("dialog", { hidden: true, name: "Some clues will be removed" });
+    const dialog = screen.getByRole("dialog", { hidden: true, name: "Some words with clues will be removed" });
     expect(dialog).toHaveAttribute("open");
     expect(dialog).toHaveTextContent("2a DOG");
     expect(finishGrid).not.toHaveBeenCalled();
