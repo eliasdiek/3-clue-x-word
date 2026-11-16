@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 /// The admin website's address. Set it when building:
 ///   flutter run --dart-define=API_BASE_URL=https://your-site.vercel.app
-const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
+const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://3clude-x-word-puzzle.vercel.app');
 
 class ApiException implements Exception {
   ApiException(this.message);
