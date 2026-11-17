@@ -29,6 +29,8 @@ class ClueBar extends StatelessWidget {
   final VoidCallback onPrevious;
   final VoidCallback onNext;
 
+  static const clueHeight = 84.0;
+
   String? _neighbourLabel(int step) {
     final words = game.puzzle.words;
     final n = words.length;
@@ -51,7 +53,7 @@ class ClueBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [BoxShadow(color: Color(0x14171F4D), blurRadius: 18, offset: Offset(0, 6))],
       ),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -88,9 +90,11 @@ class ClueBar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // IntrinsicHeight: the grey arrow areas stretch to the clue's height.
-          IntrinsicHeight(
+          const SizedBox(height: 8),
+          // A fixed height (room for about 60 characters), so the grid above
+          // never changes size from one clue to the next.
+          SizedBox(
+            height: ClueBar.clueHeight,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -103,28 +107,36 @@ class ClueBar extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Container(
-                    constraints: const BoxConstraints(minHeight: 72),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: AppColors.fill(game.solved[game.currentWord] ? null : game.clueLevel).withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.line),
                     ),
-                    child: Row(
+                    child: Stack(
                       children: [
-                        Text(
-                          game.word.label,
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.brand),
+                        // The word number, tucked into the top corner so the
+                        // clue has the whole width.
+                        Positioned(
+                          left: 8,
+                          top: 4,
+                          child: Text(
+                            game.word.label,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.brand, height: 1),
+                          ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Semantics(
-                            liveRegion: true,
-                            label: '${game.word.label}, ${game.clueLevel.label} clue: ${game.clue}',
-                            excludeSemantics: true,
-                            child: Text(
-                              game.clue,
-                              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.25),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 18, 10, 6),
+                          child: Center(
+                            child: Semantics(
+                              liveRegion: true,
+                              label: '${game.word.label}, ${game.clueLevel.label} clue: ${game.clue}',
+                              excludeSemantics: true,
+                              child: FittingText(
+                                game.clue,
+                                style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.2),
+                                maxFontSize: 18,
+                                minFontSize: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -180,7 +192,7 @@ class _ClueTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Container(
-            height: 52,
+            height: 46,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: selected ? textColor : Colors.transparent, width: 2.5),
@@ -190,7 +202,7 @@ class _ClueTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // The "sun" marks the clue being viewed.
-                if (selected) Icon(Icons.wb_sunny_rounded, size: 16, color: textColor) else const SizedBox(height: 16),
+                if (selected) Icon(Icons.wb_sunny_rounded, size: 14, color: textColor) else const SizedBox(height: 14),
                 FittedBox(
                   child: Text(
                     label,
@@ -228,8 +240,8 @@ class _IconBox extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: SizedBox(
-            width: 48,
-            height: 52,
+            width: 46,
+            height: 46,
             child: Icon(icon, size: 28, color: onTap == null ? AppColors.inkMuted.withValues(alpha: 0.4) : AppColors.brand),
           ),
         ),
@@ -267,11 +279,59 @@ class _ArrowArea extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: SizedBox(
-            width: 52,
+            width: 44,
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: children),
           ),
         ),
       ),
     );
+  }
+}
+
+/// Text that takes the largest font size (from [maxFontSize] down to
+/// [minFontSize]) at which it fits its box without breaking a word.
+class FittingText extends StatelessWidget {
+  const FittingText(this.text, {super.key, required this.style, required this.maxFontSize, required this.minFontSize});
+
+  final String text;
+  final TextStyle style;
+  final double maxFontSize;
+  final double minFontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scaler = MediaQuery.textScalerOf(context);
+        final words = text.split(RegExp(r'\s+'));
+        var size = maxFontSize;
+        for (; size > minFontSize; size -= 0.5) {
+          if (_fits(words, style.copyWith(fontSize: size), scaler, constraints)) break;
+        }
+        return Text(
+          text,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 4,
+          style: style.copyWith(fontSize: size),
+        );
+      },
+    );
+  }
+
+  bool _fits(List<String> words, TextStyle style, TextScaler scaler, BoxConstraints box) {
+    TextPainter painter(String s) =>
+        TextPainter(text: TextSpan(text: s, style: style), textDirection: TextDirection.ltr, textScaler: scaler, textAlign: TextAlign.center);
+    // No single word may be wider than the box (that would split it).
+    for (final word in words) {
+      final p = painter(word)..layout();
+      final tooWide = p.width > box.maxWidth;
+      p.dispose();
+      if (tooWide) return false;
+    }
+    final all = painter(text)..layout(maxWidth: box.maxWidth);
+    final fits = all.height <= box.maxHeight;
+    all.dispose();
+    return fits;
   }
 }

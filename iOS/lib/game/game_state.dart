@@ -145,11 +145,19 @@ class GameState {
     }
   }
 
-  /// Tapping a square. A black letter does nothing. Otherwise the word in
-  /// the current direction is selected if there is one, else the other.
+  /// Tapping a square goes to it, solved or not, and shows its word's clue
+  /// (so a solved word can be reviewed):
+  ///   - a square in one word only selects that word (and its direction);
+  ///   - a crossing square keeps the current direction,
+  ///   - unless it is the first letter of an unsolved word in the other
+  ///     direction only: then that word is selected. (The first letter of
+  ///     two unsolved words keeps the current direction.)
   void tapCell(int cell) {
-    if (puzzle.isBlock(cell) || isBlackLetter(cell) || gaveUp) return;
-    final w = puzzle.wordAt(cell, direction) ?? puzzle.wordAt(cell, direction.other);
+    if (puzzle.isBlock(cell) || gaveUp) return;
+    final here = puzzle.wordAt(cell, direction);
+    final other = puzzle.wordAt(cell, direction.other);
+    bool startsUnsolved(int? w) => w != null && !solved[w] && puzzle.words[w].cells.first == cell;
+    final w = startsUnsolved(other) && !startsUnsolved(here) ? other : here ?? other;
     if (w == null) return;
     _select(w, cell: cell);
   }
@@ -208,19 +216,19 @@ class GameState {
   }
 
   /// The keyboard's back arrow: deletes red letters backwards through the
-  /// word and stops at its first square. Black letters can't be deleted.
+  /// word and stops at its first open square. Black (solved) letters can't
+  /// be deleted and are jumped over, as typing jumps over them.
   void delete() {
     if (gaveUp) return;
-    final cells = word.cells;
-    final i = cells.indexOf(currentCell);
+    final previous = _previousUnlocked(currentCell);
     if (isRedLetter(currentCell)) {
       letters[currentCell] = null;
-      if (i > 0) currentCell = cells[i - 1];
+      if (previous != null) currentCell = previous;
       return;
     }
-    if (i <= 0) return;
-    currentCell = cells[i - 1];
-    if (isRedLetter(currentCell)) letters[currentCell] = null;
+    if (previous == null) return;
+    currentCell = previous;
+    if (isRedLetter(previous)) letters[previous] = null;
   }
 
   /// Show Me: fills the current square, or the next empty or wrong square
@@ -273,6 +281,15 @@ class GameState {
   int? _nextUnlocked(int cell) {
     final cells = word.cells;
     for (var i = cells.indexOf(cell) + 1; i < cells.length; i++) {
+      if (!isLocked(cells[i])) return cells[i];
+    }
+    return null;
+  }
+
+  /// The nearest unlocked square before [cell] in the current word, if any.
+  int? _previousUnlocked(int cell) {
+    final cells = word.cells;
+    for (var i = cells.indexOf(cell) - 1; i >= 0; i--) {
       if (!isLocked(cells[i])) return cells[i];
     }
     return null;

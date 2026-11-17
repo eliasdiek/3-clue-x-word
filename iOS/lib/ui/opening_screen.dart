@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/api_client.dart';
 import '../data/repository.dart';
 import 'history_screen.dart';
+import 'info_screen.dart';
 import 'puzzle_screen.dart';
 import 'theme.dart';
 import 'widgets/brand.dart';
@@ -88,6 +89,11 @@ class _OpeningScreenState extends State<OpeningScreen> {
                               _today(),
                               style: const TextStyle(fontFamily: 'Arial', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.navy),
                             ),
+                          ),
+                          IconButton(
+                            tooltip: 'How to play',
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InfoScreen())),
+                            icon: const Icon(Icons.info_rounded, color: Color(0xFF3D9BEA), size: 30),
                           ),
                           IconButton(
                             tooltip: 'My progress',

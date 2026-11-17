@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/repository.dart';
+import '../data/storage.dart';
 import '../game/game_state.dart';
 import 'finish_flow.dart';
 import 'game_controller.dart';
+import 'sounds.dart';
 import 'theme.dart';
 import 'widgets/brand.dart';
 import 'widgets/clue_bar.dart';
@@ -25,7 +27,7 @@ class PuzzleScreen extends StatefulWidget {
   State<PuzzleScreen> createState() => _PuzzleScreenState();
 }
 
-class _PuzzleScreenState extends State<PuzzleScreen> {
+class _PuzzleScreenState extends State<PuzzleScreen> with WidgetsBindingObserver {
   late final GameController controller = GameController(game: widget.game, repository: widget.repository);
   final focusNode = FocusNode();
   bool _leaving = false;
@@ -34,10 +36,14 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
   void initState() {
     super.initState();
     controller.addListener(_onChange);
+    WidgetsBinding.instance.addObserver(this);
+    if (widget.repository.storage.musicOn) Sounds.instance.startMusic();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    Sounds.instance.stopMusic();
     controller.removeListener(_onChange);
     controller.dispose();
     focusNode.dispose();
@@ -49,9 +55,28 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
       _leaving = true;
       // The specification: on finishing, go straight to an ad, then the score.
       Future.delayed(const Duration(milliseconds: 900), () {
+        Sounds.instance.stopMusic();
         if (mounted) showFinish(context, game: widget.game, repository: widget.repository);
       });
     }
+  }
+
+  /// Music pauses while the app is in the background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!widget.repository.storage.musicOn) return;
+    if (state == AppLifecycleState.resumed) {
+      Sounds.instance.resumeMusic();
+    } else if (state == AppLifecycleState.paused) {
+      Sounds.instance.pauseMusic();
+    }
+  }
+
+  /// Entering a letter makes a key click (the iPhone's own keyboard click;
+  /// it follows the phone's silent switch).
+  void _type(String letter) {
+    if (widget.repository.storage.clickOn) Sounds.instance.click();
+    controller.type(letter);
   }
 
   /// A hardware keyboard works too (handy on iPad and when testing).
@@ -76,7 +101,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
     }
     final ch = event.character?.toUpperCase();
     if (ch != null && RegExp(r'^[A-Z]$').hasMatch(ch)) {
-      controller.type(ch);
+      _type(ch);
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -147,7 +172,8 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text('Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navy)),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
+              _SoundSwitches(storage: widget.repository.storage),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.mail_outline_rounded, color: AppColors.brand),
@@ -203,7 +229,10 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
         if (!didPop) _giveUpMenu();
       },
       child: Scaffold(
+        // The keyboard sits low, partly in the home-indicator area like the
+        // iPhone's own keyboard, leaving more room for the grid.
         body: SafeArea(
+          bottom: false,
           child: Focus(
             focusNode: focusNode,
             autofocus: true,
@@ -212,8 +241,9 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
               listenable: controller,
               builder: (context, _) {
                 final game = widget.game;
+                final bottom = (MediaQuery.viewPaddingOf(context).bottom - 18).clamp(4.0, 40.0);
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                  padding: EdgeInsets.fromLTRB(8, 0, 8, bottom),
                   child: Column(
                     children: [
                       Row(
@@ -222,7 +252,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
                           Expanded(
                             child: Column(
                               children: [
-                                const BrandLogo(height: 34),
+                                const BrandLogo(height: 30),
                                 Text(
                                   'Puzzle #${game.puzzle.puzzleNumber} · ${game.solvedWordCount}/${game.puzzle.words.length} words',
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.inkMuted),
@@ -233,7 +263,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
                           _RoundIcon(icon: Icons.settings_rounded, tooltip: 'Settings', onTap: _settings),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Expanded(
                         child: Stack(
                           alignment: Alignment.center,
@@ -250,7 +280,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       if (!game.gaveUp)
                         ClueBar(
                           game: game,
@@ -260,8 +290,8 @@ class _PuzzleScreenState extends State<PuzzleScreen> {
                           onPrevious: controller.previousWord,
                           onNext: controller.nextWord,
                         ),
-                      const SizedBox(height: 8),
-                      LetterKeyboard(onLetter: controller.type, onDelete: controller.delete),
+                      const SizedBox(height: 6),
+                      LetterKeyboard(onLetter: _type, onDelete: controller.delete),
                     ],
                   ),
                 );
@@ -286,11 +316,11 @@ class _RoundIcon extends StatelessWidget {
     return IconButton.outlined(
       tooltip: tooltip,
       onPressed: onTap,
-      iconSize: 26,
+      iconSize: 24,
       style: IconButton.styleFrom(
         foregroundColor: AppColors.navy,
         side: const BorderSide(color: AppColors.line, width: 2),
-        minimumSize: const Size(48, 48),
+        minimumSize: const Size(44, 44),
       ),
       icon: Icon(icon),
     );
@@ -329,6 +359,48 @@ class _Compliment extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Settings: background music and key click on/off (remembered).
+class _SoundSwitches extends StatefulWidget {
+  const _SoundSwitches({required this.storage});
+
+  final Storage storage;
+
+  @override
+  State<_SoundSwitches> createState() => _SoundSwitchesState();
+}
+
+class _SoundSwitchesState extends State<_SoundSwitches> {
+  @override
+  Widget build(BuildContext context) {
+    final storage = widget.storage;
+    return Column(
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(Icons.music_note_rounded, color: AppColors.brand),
+          title: const Text('Background music'),
+          value: storage.musicOn,
+          onChanged: (on) async {
+            await storage.setMusicOn(on);
+            on ? Sounds.instance.startMusic() : Sounds.instance.stopMusic();
+            setState(() {});
+          },
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(Icons.keyboard_rounded, color: AppColors.brand),
+          title: const Text('Key click'),
+          value: storage.clickOn,
+          onChanged: (on) async {
+            await storage.setClickOn(on);
+            setState(() {});
+          },
+        ),
+      ],
     );
   }
 }

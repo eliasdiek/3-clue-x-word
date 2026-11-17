@@ -85,6 +85,14 @@ class Storage {
   Future<void> addHistory(HistoryEntry entry) =>
       _prefs.setString(_history, jsonEncode([...history, entry].map((e) => e.toJson()).toList()));
 
+  // Sound settings (Settings → Background music / Key click). On by default.
+  static const _musicOn = 'musicOn';
+  static const _clickOn = 'clickOn';
+  bool get musicOn => _prefs.getBool(_musicOn) ?? true;
+  Future<void> setMusicOn(bool on) => _prefs.setBool(_musicOn, on);
+  bool get clickOn => _prefs.getBool(_clickOn) ?? true;
+  Future<void> setClickOn(bool on) => _prefs.setBool(_clickOn, on);
+
   // Quotes seen, so the opening screen works offline for today.
   Map<String, dynamic>? quote(String date) => _readJson(_quoteKey(date));
   Future<void> saveQuote(String date, Map<String, dynamic> json) => _prefs.setString(_quoteKey(date), jsonEncode(json));

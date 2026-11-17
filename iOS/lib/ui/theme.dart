@@ -33,6 +33,14 @@ abstract final class AppColors {
         null => square,
       };
 
+  /// The same colours, faint, for the grid squares (the client: "quite
+  /// faint is fine", so the letters stand out). The clue tabs stay strong.
+  static Color gridFill(ClueLevel? level) => level == null ? square : Color.lerp(square, fill(level), 0.42)!;
+
+  /// The outline round the word being solved, and the current square.
+  static const wordOutline = Colors.white;
+  static const wordOutlineEdge = navy;
+
   /// A stronger shade for tab borders and text on a level colour.
   static Color strong(ClueLevel level) => switch (level) {
         ClueLevel.harder => const Color(0xFF8A5A00),

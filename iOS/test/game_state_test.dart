@@ -108,10 +108,44 @@ void main() {
       for (final l in 'CAT'.split('')) {
         g.type(l);
       }
-      g.tapCell(0); // black letter: nothing happens
+      g.tapCell(0); // C: 1a is solved, 1d is unsolved and starts here → 1d
       expect(g.word.label, '1d');
-      g.delete(); // at O (empty): steps back to C, which is black and stays
+      g.type('X'); // C is black: typing goes on to O
       expect(g.letters[0], 'C');
+      expect(g.letters[12], 'X');
+      g.delete();
+      g.delete(); // nothing before O to delete: C is black and stays
+      expect(g.letters[0], 'C');
+      expect(g.currentCell, 12);
+    });
+
+    test('tapping a solved letter goes there and shows its word', () {
+      final g = GameState.start(mini);
+      for (final l in 'CAT'.split('')) {
+        g.type(l);
+      }
+      expect(g.word.label, '1d');
+      g.tapCell(1); // A: only in 1a, which is solved
+      expect(g.word.label, '1a');
+      expect(g.currentCell, 1);
+      expect(g.clue, 'Harder CAT');
+    });
+
+    test('delete jumps back over solved letters, as typing jumps forward', () {
+      final g = GameState.start(sample);
+      g.tapCell(30); // 8a SILVER
+      for (final l in 'SILVER'.split('')) {
+        g.type(l);
+      }
+      g.tapCell(6); // first letter of 4d (unsolved), also in 1a → 4d
+      expect(g.word.label, '4d');
+      g.type('S');
+      g.type('A');
+      expect(g.currentCell, 42, reason: 'jumps over the solved S of SILVER');
+      g.type('X');
+      g.delete(); // removes X and goes back over the solved S to A
+      expect(g.letters[42], isNull);
+      expect(g.currentCell, 18);
     });
 
     test('delete stops at the first square of the word', () {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:three_clue_xword/data/api_client.dart';
@@ -11,8 +12,12 @@ import 'package:three_clue_xword/game/game_state.dart';
 import 'package:three_clue_xword/game/models.dart';
 import 'package:three_clue_xword/ui/finish_flow.dart';
 import 'package:three_clue_xword/ui/history_screen.dart';
+import 'package:three_clue_xword/ui/info_screen.dart';
 import 'package:three_clue_xword/ui/puzzle_screen.dart';
+import 'package:three_clue_xword/ui/sounds.dart';
 import 'package:three_clue_xword/ui/theme.dart';
+import 'package:three_clue_xword/ui/widgets/clue_bar.dart';
+import 'package:three_clue_xword/ui/widgets/crossword_grid.dart';
 
 /// Draws each screen at iPhone sizes. Any layout error (overflow, unbounded
 /// height, ...) fails the test.
@@ -35,6 +40,8 @@ Future<void> show(WidgetTester tester, Size size, Widget screen) async {
 }
 
 void main() {
+  setUpAll(() => Sounds.enabled = false); // no audio device in tests
+
   for (final MapEntry(key: phone, value: size) in phones.entries) {
     group(phone, () {
       testWidgets('puzzle screen', (tester) async {
@@ -69,8 +76,49 @@ void main() {
           percent: game.percent,
           gaveUp: true,
         );
-        await show(tester, size, ScoreScreen(game: game, entry: entry));
+        final history = [for (final p in [40, 45, 50, 55, 60, 62, 64, 66, 68]) HistoryEntry(puzzleNumber: p, finishedAt: DateTime(2026, 11, 9), score: p, maxScore: 100, percent: p, gaveUp: false), entry];
+        await show(tester, size, ScoreScreen(game: game, entry: entry, history: history));
         expect(find.text('${game.score}'), findsOneWidget);
+        await tester.scrollUntilVisible(find.text('Previous 5'), 200, scrollable: find.byType(Scrollable).first);
+        expect(find.text('Your last 5 games'), findsOneWidget);
+        expect(find.textContaining('Better than'), findsOneWidget);
+        expect(find.text('Previous 5'), findsOneWidget);
+      });
+
+      testWidgets('a 50-character clue fits without breaking words or moving the grid', (tester) async {
+        final repo = await repository();
+        final game = GameState.start(sample());
+        await show(tester, size, PuzzleScreen(game: game, repository: repo));
+        final gridBefore = tester.getRect(find.byType(CrosswordGrid));
+        final clueBox = tester.getSize(find.byType(FittingText));
+        // A long clue: the box keeps its size and the text fits inside it.
+        const long = 'Geological age of reptiles and early mammal kinds.'; // 50 characters
+        expect(long.length, 50);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildTheme(),
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: clueBox.width,
+                  height: clueBox.height,
+                  child: const FittingText(long, style: TextStyle(fontWeight: FontWeight.w600, height: 1.2), maxFontSize: 18, minFontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        );
+        final paragraph = tester.renderObject<RenderParagraph>(find.text(long));
+        expect(paragraph.didExceedMaxLines, isFalse);
+        expect(paragraph.size.height, lessThanOrEqualTo(clueBox.height));
+        expect(tester.takeException(), isNull);
+        expect(gridBefore.width, greaterThan(size.width * (size.height < 700 ? 0.7 : 0.85)), reason: 'the grid fills most of the width');
+      });
+
+      testWidgets('info page', (tester) async {
+        await show(tester, size, const InfoScreen());
+        expect(find.text('BACK'), findsOneWidget);
+        expect(find.text('Welcome to 3-Clue X-Word'), findsOneWidget);
       });
 
       testWidgets('my progress', (tester) async {
