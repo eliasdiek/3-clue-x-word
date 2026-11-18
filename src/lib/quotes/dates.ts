@@ -45,3 +45,17 @@ export function formatMonth(month: string): string {
     new Date(`${month}-01T00:00:00Z`),
   );
 }
+
+/**
+ * A day with no quote repeats the quote from 100 days before (then 200,
+ * 300, ... days before, if those are empty too), so the opening screen
+ * always has one. John's request (18 Nov 2026): "I'm hoping solvers won't
+ * have 100-day memories."
+ */
+export const REPEAT_AFTER_DAYS = 100;
+const MAX_LOOKBACKS = 10;
+
+/** The dates to try, in order: the day itself, then 100, 200, ... days before. */
+export function quoteDatesFor(date: string): string[] {
+  return Array.from({ length: MAX_LOOKBACKS + 1 }, (_, i) => addDays(date, -i * REPEAT_AFTER_DAYS));
+}

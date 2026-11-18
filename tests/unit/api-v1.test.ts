@@ -11,7 +11,7 @@ let nextResult: Result = { data: null, error: null };
 const calls: [string, unknown[]][] = [];
 function builder(): Record<string, unknown> {
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "select", "gt", "eq", "order", "limit"]) {
+  for (const method of ["from", "select", "gt", "eq", "in", "order", "limit"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push([method, args]);
       return chain;
@@ -127,12 +127,25 @@ describe("GET /api/v1/puzzles/next and /:number", () => {
 describe("GET /api/v1/quotes/today", () => {
   it("returns the quote for the requested date", async () => {
     const today = new Date().toISOString().slice(0, 10);
-    nextResult = { data: { quote_date: today, quote_text: "Well begun is half done.", author: "Aristotle", commentary: null }, error: null };
+    nextResult = { data: [{ quote_date: today, quote_text: "Well begun is half done.", author: "Aristotle", commentary: null }], error: null };
     const res = await todaysQuote(req(`/api/v1/quotes/today?date=${today}`));
     expect(await res.json()).toEqual({
       apiVersion: "v1",
-      quote: { date: today, text: "Well begun is half done.", author: "Aristotle", comment: null },
+      quote: { date: today, from: today, text: "Well begun is half done.", author: "Aristotle", comment: null },
     });
+  });
+
+  it("repeats the quote from 100 days before when a day has none", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const quote = (date: string, text: string) => ({ quote_date: date, quote_text: text, author: null, commentary: null });
+    nextResult = { data: [quote(addDays(today, -200), "Two hundred"), quote(addDays(today, -100), "One hundred")], error: null };
+    const body = await (await todaysQuote(req(`/api/v1/quotes/today?date=${today}`))).json();
+    expect(body.quote).toMatchObject({ date: today, from: addDays(today, -100), text: "One hundred" });
+    const asked = calls.find(([method]) => method === "in")![1][1] as string[];
+    expect(asked.slice(0, 3)).toEqual([today, addDays(today, -100), addDays(today, -200)]);
+
+    nextResult = { data: [quote(addDays(today, -300), "Three hundred")], error: null };
+    expect((await (await todaysQuote(req(`/api/v1/quotes/today?date=${today}`))).json()).quote.text).toBe("Three hundred");
   });
 
   it("refuses dates far from today and reports missing quotes", async () => {

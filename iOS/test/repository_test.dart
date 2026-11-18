@@ -112,4 +112,20 @@ void main() {
     expect(data.game, isNull);
     expect(data.message, contains("Can't reach"));
   });
+
+  test('a finished puzzle shows again until Next puzzle is tapped', () async {
+    expect(repo.unclosedResult(), isNull);
+    final game = (await repo.load()).game!..revealSolution();
+    final entry = await repo.finish(game);
+
+    // As if the app was closed during the ad and opened again.
+    final again = GameRepository(api: repo.api, storage: await Storage.open()).unclosedResult();
+    expect(again, isNotNull);
+    expect(again!.entry.score, entry.score);
+    expect(again.game.isComplete, isTrue);
+    expect(again.game.letters, game.letters);
+
+    await repo.closeResult();
+    expect(repo.unclosedResult(), isNull);
+  });
 }

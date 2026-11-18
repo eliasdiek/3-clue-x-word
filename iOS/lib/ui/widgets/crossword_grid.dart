@@ -5,8 +5,8 @@ import '../theme.dart';
 
 /// The 12×12 board. Square fills show the clue colours (faintly); letters
 /// are red while being tried and black once their word is right. The word
-/// being solved has a thick white outline edged in navy, and the current
-/// square a thick purple frame, so it's always clear where you are.
+/// being solved has a purple frame around it, and the current square its own
+/// purple frame inside it, so it's always clear where you are.
 class CrosswordGrid extends StatelessWidget {
   const CrosswordGrid({super.key, required this.game, this.onTap, this.onDoubleTap, this.highlightCurrent = true});
 
@@ -106,38 +106,21 @@ class _CurrentWordPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (cells.isEmpty) return;
     final word = _cellRect(cells.first).expandToInclude(_cellRect(cells.last));
+    final frame = (cellSize * 0.1).clamp(2.5, 5.0);
+    final purple = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = frame
+      ..color = AppColors.brand;
 
-    // A thick white band just inside the word, edged in navy so it shows
-    // against white squares too. Letters and numbers are drawn above it.
-    final band = (cellSize * 0.13).clamp(3.0, 7.0);
-    final outer = word.deflate(band / 2);
-    final radius = Radius.circular(band);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(word.inflate(1), radius),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = AppColors.wordOutlineEdge,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(outer, radius),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = band
-        ..color = AppColors.wordOutline,
-    );
+    // The whole word: a purple frame as thick as the current square's, just
+    // outside the word so its squares stay clear. (Kept inside the grid
+    // where the word reaches the edge.)
+    final inside = (Offset.zero & size).deflate(frame / 2);
+    final outline = word.inflate(frame / 2).intersect(inside);
+    canvas.drawRRect(RRect.fromRectAndRadius(outline, Radius.circular(frame)), purple);
 
     // The current square: a thick purple frame inside it.
-    if (cells.contains(currentCell)) {
-      final frame = (cellSize * 0.1).clamp(2.5, 5.0);
-      canvas.drawRect(
-        _cellRect(currentCell).deflate(frame / 2),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = frame
-          ..color = AppColors.brand,
-      );
-    }
+    if (cells.contains(currentCell)) canvas.drawRect(_cellRect(currentCell).deflate(frame / 2), purple);
   }
 
   @override

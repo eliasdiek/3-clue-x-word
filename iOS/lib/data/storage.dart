@@ -85,13 +85,23 @@ class Storage {
   Future<void> addHistory(HistoryEntry entry) =>
       _prefs.setString(_history, jsonEncode([...history, entry].map((e) => e.toJson()).toList()));
 
-  // Sound settings (Settings → Background music / Key click). On by default.
+  // A finished puzzle whose result the player hasn't closed yet (they may
+  // have left the app during the ad): the Completed page shows again.
+  static const _result = 'unclosedResult';
+  Map<String, dynamic>? get unclosedResult => _readJson(_result);
+  Future<void> setUnclosedResult(Map<String, dynamic>? json) =>
+      json == null ? _prefs.remove(_result) : _prefs.setString(_result, jsonEncode(json));
+
+  // Sound settings (Settings → Background music / Key click / Voice). On by default.
   static const _musicOn = 'musicOn';
   static const _clickOn = 'clickOn';
+  static const _voiceOn = 'voiceOn';
   bool get musicOn => _prefs.getBool(_musicOn) ?? true;
   Future<void> setMusicOn(bool on) => _prefs.setBool(_musicOn, on);
   bool get clickOn => _prefs.getBool(_clickOn) ?? true;
   Future<void> setClickOn(bool on) => _prefs.setBool(_clickOn, on);
+  bool get voiceOn => _prefs.getBool(_voiceOn) ?? true;
+  Future<void> setVoiceOn(bool on) => _prefs.setBool(_voiceOn, on);
 
   // Quotes seen, so the opening screen works offline for today.
   Map<String, dynamic>? quote(String date) => _readJson(_quoteKey(date));

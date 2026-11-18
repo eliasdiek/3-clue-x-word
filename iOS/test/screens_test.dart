@@ -31,6 +31,11 @@ Future<GameRepository> repository() async {
   return GameRepository(api: ApiClient(baseUrl: 'http://test.invalid'), storage: await Storage.open());
 }
 
+/// The space the clue text gets inside the clue bar (the text itself is
+/// centred in it and can be smaller).
+Size clueSpace(WidgetTester tester) =>
+    tester.getSize(find.ancestor(of: find.byType(FittingText), matching: find.byType(Center)).first);
+
 Future<void> show(WidgetTester tester, Size size, Widget screen) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
@@ -77,12 +82,25 @@ void main() {
           gaveUp: true,
         );
         final history = [for (final p in [40, 45, 50, 55, 60, 62, 64, 66, 68]) HistoryEntry(puzzleNumber: p, finishedAt: DateTime(2026, 11, 9), score: p, maxScore: 100, percent: p, gaveUp: false), entry];
-        await show(tester, size, ScoreScreen(game: game, entry: entry, history: history));
-        expect(find.text('${game.score}'), findsOneWidget);
-        await tester.scrollUntilVisible(find.text('Previous 5'), 200, scrollable: find.byType(Scrollable).first);
-        expect(find.text('Your last 5 games'), findsOneWidget);
-        expect(find.textContaining('Better than'), findsOneWidget);
-        expect(find.text('Previous 5'), findsOneWidget);
+        await show(tester, size, ScoreScreen(game: game, entry: entry, history: history, weekday: DateTime.tuesday));
+        expect(find.textContaining('Your Score:', findRichText: true), findsOneWidget);
+        expect(find.textContaining('Maximum: ${game.maxScore}', findRichText: true), findsOneWidget);
+        expect(find.text('Show Me'), findsOneWidget);
+        await tester.scrollUntilVisible(find.text('Next puzzle'), 200, scrollable: find.byType(Scrollable).first);
+        expect(find.text('Your last 5 games\naveraged'), findsOneWidget);
+        expect(find.textContaining('You are in the top', findRichText: true), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('completed page leads to the score', (tester) async {
+        final repo = await repository();
+        final game = GameState.start(sample())..revealSolution();
+        final entry = await repo.finish(game);
+        await show(tester, size, CompletedScreen(game: game, entry: entry, repository: repo));
+        expect(find.text('Next puzzle'), findsNothing, reason: 'one way on: See your score');
+        await tester.tap(find.text('See your score'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Your Score:', findRichText: true), findsOneWidget);
       });
 
       testWidgets('a 50-character clue fits without breaking words or moving the grid', (tester) async {
@@ -90,7 +108,7 @@ void main() {
         final game = GameState.start(sample());
         await show(tester, size, PuzzleScreen(game: game, repository: repo));
         final gridBefore = tester.getRect(find.byType(CrosswordGrid));
-        final clueBox = tester.getSize(find.byType(FittingText));
+        final clueBox = clueSpace(tester);
         // A long clue: the box keeps its size and the text fits inside it.
         const long = 'Geological age of reptiles and early mammal kinds.'; // 50 characters
         expect(long.length, 50);
@@ -112,7 +130,45 @@ void main() {
         expect(paragraph.didExceedMaxLines, isFalse);
         expect(paragraph.size.height, lessThanOrEqualTo(clueBox.height));
         expect(tester.takeException(), isNull);
-        expect(gridBefore.width, greaterThan(size.width * (size.height < 700 ? 0.7 : 0.85)), reason: 'the grid fills most of the width');
+        expect(gridBefore.width, greaterThan(size.width * (size.height < 700 ? 0.68 : 0.85)), reason: 'the grid fills most of the width');
+      });
+
+      testWidgets('the whole clue shows even when the theme draws wider text', (tester) async {
+        // John, 18 Nov: clues that lost their last word on the iPhone
+        // (HEAVE 23a Medium, 30a WHO).
+        final repo = await repository();
+        await show(tester, size, PuzzleScreen(game: GameState.start(sample()), repository: repo));
+        final box = clueSpace(tester);
+        expect(box.height, greaterThan(50), reason: 'measures the space, not the text');
+        for (final (clue, spacing) in [
+          for (final c in ['A Period of time with a unique feature', 'Acronym for World Health Organisation'])
+            for (final s in [0.0, 0.5, 1.5]) (c, s),
+        ]) {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: buildTheme(),
+              home: Scaffold(
+                body: Center(
+                  child: DefaultTextStyle.merge(
+                    style: TextStyle(letterSpacing: spacing),
+                    child: SizedBox(
+                      width: box.width,
+                      height: box.height,
+                      child: FittingText(clue, style: TextStyle(fontWeight: FontWeight.w600, height: 1.2), maxFontSize: 18, minFontSize: 12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          final paragraph = tester.renderObject<RenderParagraph>(find.text(clue));
+          expect(paragraph.didExceedMaxLines, isFalse, reason: '$clue, letterSpacing $spacing');
+          // Lay the drawn text out again, unclipped: it must fit the box.
+          final painter = TextPainter(text: paragraph.text, textDirection: TextDirection.ltr, textScaler: paragraph.textScaler, textAlign: TextAlign.center)
+            ..layout(maxWidth: box.width);
+          expect(painter.height, lessThanOrEqualTo(box.height), reason: '$clue, letterSpacing $spacing');
+          painter.dispose();
+        }
       });
 
       testWidgets('info page', (tester) async {

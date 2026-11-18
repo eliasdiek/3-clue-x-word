@@ -11,16 +11,30 @@ import 'theme.dart';
 import 'widgets/brand.dart';
 import 'widgets/crossword_grid.dart';
 
-/// Finishing a puzzle: records it, plays the ad break, then shows the score
-/// screen. (The specification: "the App goes immediately to an
-/// advertisement. When the ad is completed, the App returns to the progress
-/// summary screen.")
+/// Finishing a puzzle: records it, plays the ad break, then shows the
+/// Completed page ("See your score" leads on to the Score Summary page).
+///
+/// The result is kept until the player taps Next puzzle, so if they leave
+/// the app during the ad (or later) the Completed page shows again when
+/// they come back (see [showUnclosedResult]).
 Future<void> showFinish(BuildContext context, {required GameState game, required GameRepository repository}) async {
   final entry = await repository.finish(game);
   if (!context.mounted) return;
   final navigator = Navigator.of(context);
   await navigator.push(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const AdBreakScreen()));
-  await navigator.pushReplacement(MaterialPageRoute(builder: (_) => ScoreScreen(game: game, entry: entry, history: repository.storage.history)));
+  await navigator.pushReplacement(
+    MaterialPageRoute(builder: (_) => CompletedScreen(game: game, entry: entry, repository: repository)),
+  );
+}
+
+/// On opening the app: the Completed page of a puzzle finished last time,
+/// if the player never got as far as Next puzzle.
+Future<void> showUnclosedResult(BuildContext context, GameRepository repository) async {
+  final result = repository.unclosedResult();
+  if (result == null) return;
+  await Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => CompletedScreen(game: result.game, entry: result.entry, repository: repository)),
+  );
 }
 
 /// Placeholder for the ad break. Real ads (e.g. Google AdMob) need John's
@@ -80,10 +94,68 @@ class _AdBreakScreenState extends State<AdBreakScreen> {
   }
 }
 
-/// The scoring screen: the finished grid in the colours of the clues used,
-/// and the score (7 / 5 / 3 / 0 points per letter).
+/// The Completed page: the finished grid in the colours of the clues used,
+/// and one way on, "See your score".
+class CompletedScreen extends StatelessWidget {
+  const CompletedScreen({super.key, required this.game, required this.entry, required this.repository});
+
+  final GameState game;
+  final HistoryEntry entry;
+  final GameRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false, // the button is the only way on
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              children: [
+                const BrandLogo(height: 44),
+                const SizedBox(height: 12),
+                Text(
+                  game.gaveUp ? 'Puzzle #${game.puzzle.puzzleNumber}' : 'Puzzle #${game.puzzle.puzzleNumber} complete!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.navy),
+                ),
+                const SizedBox(height: 16),
+                Expanded(child: Center(child: CrosswordGrid(game: game, highlightCurrent: false))),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(64, 64),
+                      textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                    ),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ScoreScreen(game: game, entry: entry, history: repository.storage.history, repository: repository),
+                      ),
+                    ),
+                    child: const FittedBox(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [Text('See your score'), SizedBox(width: 10), Icon(Icons.arrow_forward_rounded, size: 26)],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Score Summary page: the score, how it was made (7 / 5 / 3 / 0 points
+/// per square), and the average of the last games.
 class ScoreScreen extends StatelessWidget {
-  const ScoreScreen({super.key, required this.game, required this.entry, this.history = const []});
+  const ScoreScreen({super.key, required this.game, required this.entry, this.history = const [], this.repository, this.weekday});
 
   final GameState game;
   final HistoryEntry entry;
@@ -91,67 +163,69 @@ class ScoreScreen extends StatelessWidget {
   /// Every game played on this phone, oldest first (including this one).
   final List<HistoryEntry> history;
 
+  /// Closes the result on Next puzzle (null in tests).
+  final GameRepository? repository;
+
+  /// Picks the day's "better than" wording (default: today).
+  final int? weekday;
+
+  Future<void> _next(BuildContext context) async {
+    await repository?.closeResult();
+    if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     final byLevel = game.lettersByLevel;
     final rows = <(String, Color, int, int)>[
-      for (final level in ClueLevel.values) (level.label, AppColors.fill(level), byLevel[level] ?? 0, level.points),
-      ('Shown / given', AppColors.square, byLevel[null] ?? 0, 0),
+      for (final level in ClueLevel.values) (level.label, AppColors.fill(level), level.points, byLevel[level] ?? 0),
+      ('Show Me', AppColors.square, 0, byLevel[null] ?? 0),
     ];
+    final stats = ScoreStats.from(history);
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           children: [
-            const Center(child: BrandLogo(height: 44)),
-            const SizedBox(height: 12),
-            Text(
-              game.gaveUp ? 'Puzzle #${game.puzzle.puzzleNumber}' : 'Puzzle #${game.puzzle.puzzleNumber} complete!',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.navy),
-            ),
+            const Center(child: BrandLogo(height: 40)),
             const SizedBox(height: 16),
-            CrosswordGrid(game: game, highlightCurrent: false),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
-              child: Column(
+            Text.rich(
+              TextSpan(
+                text: 'Your Score:  ',
                 children: [
-                  Text('${entry.score}', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: AppColors.navy)),
-                  Text(
-                    'points out of ${entry.maxScore} (${entry.percent}%)',
-                    style: const TextStyle(fontSize: 17, color: AppColors.inkMuted),
+                  TextSpan(
+                    text: '${entry.score}',
+                    style: const TextStyle(fontWeight: FontWeight.w900, decoration: TextDecoration.underline, decorationThickness: 2),
                   ),
-                  const SizedBox(height: 14),
-                  for (final (label, color, count, points) in rows)
-                    if (count > 0)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(5), border: Border.all(color: AppColors.gridLine)),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(child: Text('$label: $count letter${count == 1 ? '' : 's'}', style: const TextStyle(fontSize: 16))),
-                            Text('${count * points} pts', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
                 ],
               ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: AppColors.navy),
             ),
-            if (ScoreStats.from(history) case final stats?) ...[
-              const SizedBox(height: 16),
-              _AveragesCard(stats: stats),
+            const SizedBox(height: 6),
+            Text.rich(
+              TextSpan(
+                text: 'Maximum: ',
+                children: [
+                  TextSpan(text: '${entry.maxScore}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                  const TextSpan(text: '  (you scored '),
+                  TextSpan(text: '${entry.percent}%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                  const TextSpan(text: ')'),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, color: AppColors.ink),
+            ),
+            const SizedBox(height: 18),
+            _ScoreTable(rows: rows),
+            if (stats != null) ...[
+              const SizedBox(height: 20),
+              _AveragesCard(stats: stats, weekday: weekday ?? DateTime.now().weekday),
             ],
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => _next(context),
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text('Next puzzle'),
             ),
@@ -162,109 +236,90 @@ class ScoreScreen extends StatelessWidget {
   }
 }
 
-/// Average of the last 5 games, how it compares with other players, and the
-/// averages of the 5 games before (to show improvement).
-class _AveragesCard extends StatelessWidget {
-  const _AveragesCard({required this.stats});
+/// Colour, clue, points per square, squares, total: one level line each.
+class _ScoreTable extends StatelessWidget {
+  const _ScoreTable({required this.rows});
 
-  final ScoreStats stats;
+  /// (name, colour, points per square, squares)
+  final List<(String, Color, int, int)> rows;
 
   @override
   Widget build(BuildContext context) {
-    final change = stats.change;
-    final title = stats.recentCount == 1
-        ? 'Your first game'
-        : stats.recentCount < ScoreStats.blockSize
-            ? 'Your last ${stats.recentCount} games'
-            : 'Your last 5 games';
+    const label = TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.navy);
+    const plain = TextStyle(fontSize: 16, color: AppColors.ink);
+    const total = TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.navy);
+    Widget cell(Widget child, {Alignment align = Alignment.centerLeft}) =>
+        Container(height: 40, alignment: align, padding: const EdgeInsets.symmetric(horizontal: 4), child: child);
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(18)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.navy)),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+    return Table(
+      columnWidths: const {
+        0: FixedColumnWidth(36),
+        1: FlexColumnWidth(),
+        2: IntrinsicColumnWidth(),
+        3: IntrinsicColumnWidth(),
+        4: FixedColumnWidth(64),
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        for (final (name, colour, points, count) in rows)
+          TableRow(
             children: [
-              Text('${stats.recentPercent}%', style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: AppColors.brand, height: 1)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    stats.recentCount == 1 ? '${stats.recentPoints} points' : 'average · ${stats.recentPoints} points a game',
-                    style: const TextStyle(fontSize: 15, color: AppColors.inkMuted),
-                  ),
+              cell(
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(color: colour, borderRadius: BorderRadius.circular(6), border: Border.all(color: AppColors.gridLine)),
                 ),
               ),
+              cell(FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(name, style: label))),
+              cell(Text(points == 1 ? '1 point' : '$points points', style: plain)),
+              cell(Text('× $count', style: plain)),
+              cell(Text('${points * count}', style: total), align: Alignment.centerRight),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.emoji_events_rounded, color: Color(0xFFE0A100), size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Better than ${stats.betterThan}% of players',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navy),
-                ),
-              ),
-            ],
-          ),
-          if (change != null) ...[
-            const SizedBox(height: 14),
-            Text(
-              change > 0
-                  ? 'Up $change% on your 5 games before. Great progress!'
-                  : change == 0
-                      ? 'The same as your 5 games before.'
-                      : 'Down ${-change}% on your 5 games before.',
-              style: const TextStyle(fontSize: 15, color: AppColors.ink),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                // Oldest on the left, so the row reads like a progress line.
-                for (final (i, percent) in stats.earlierPercents.reversed.indexed)
-                  _AverageChip(label: _blockLabel(stats.earlierPercents.length - i), percent: percent),
-                _AverageChip(label: 'Last 5', percent: stats.recentPercent, current: true),
-              ],
-            ),
-          ],
-        ],
-      ),
+      ],
     );
   }
-
-  static String _blockLabel(int blocksBack) => const ['Previous 5', '5 before that', 'Earlier 5'][blocksBack - 1];
 }
 
-class _AverageChip extends StatelessWidget {
-  const _AverageChip({required this.label, required this.percent, this.current = false});
+/// The mauve card: the average of the last (up to) 5 games and how it
+/// compares with other players.
+class _AveragesCard extends StatelessWidget {
+  const _AveragesCard({required this.stats, required this.weekday});
 
-  final String label;
-  final int percent;
-  final bool current;
+  final ScoreStats stats;
+  final int weekday;
 
   @override
   Widget build(BuildContext context) {
+    final title = stats.recentCount == 1 ? 'Your first game\nscored' : 'Your last ${stats.recentCount} games\naveraged';
+    final (before, figure, after) = ScoreStats.betterThanLine(stats.betterThan, weekday);
+    const words = TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.navy, height: 1.25);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: current ? AppColors.brand : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: current ? AppColors.brand : AppColors.line),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+      decoration: BoxDecoration(color: AppColors.brandSoft, borderRadius: BorderRadius.circular(18)),
       child: Column(
         children: [
-          Text('$percent%', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: current ? Colors.white : AppColors.navy)),
-          Text(label, style: TextStyle(fontSize: 12, color: current ? Colors.white70 : AppColors.inkMuted)),
+          const Icon(Icons.emoji_events_rounded, color: Color(0xFFE0A100), size: 64),
+          const SizedBox(height: 6),
+          Text(title, textAlign: TextAlign.center, style: words),
+          Text(
+            '${stats.recentPercent}%',
+            style: const TextStyle(fontSize: 52, fontWeight: FontWeight.w900, color: AppColors.brand, height: 1.15),
+          ),
+          const SizedBox(height: 4),
+          Text.rich(
+            TextSpan(
+              text: before,
+              children: [
+                TextSpan(text: figure, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
+                TextSpan(text: after),
+              ],
+            ),
+            textAlign: TextAlign.center,
+            style: words,
+          ),
         ],
       ),
     );

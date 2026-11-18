@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/api_client.dart';
 import '../data/repository.dart';
+import 'finish_flow.dart';
 import 'history_screen.dart';
 import 'info_screen.dart';
 import 'puzzle_screen.dart';
@@ -32,6 +33,12 @@ class _OpeningScreenState extends State<OpeningScreen> {
   void initState() {
     super.initState();
     _load();
+    // Left the app during the ad or on the Completed page last time? Show
+    // the Completed page again (John: "when they ... return later, the
+    // Completed page should show").
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showUnclosedResult(context, widget.repository);
+    });
   }
 
   Future<void> _load() async {
@@ -149,7 +156,7 @@ class _QuoteBlock extends StatelessWidget {
           Text('“${q.text}”', style: const TextStyle(fontFamily: 'Arial', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.35)),
           if (q.author != null) ...[
             const SizedBox(height: 6),
-            Text(q.author!, style: const TextStyle(fontFamily: 'Arial', fontSize: 15, color: AppColors.ink)),
+            Text('–– ${q.author!}', style: const TextStyle(fontFamily: 'Arial', fontSize: 15, color: AppColors.ink)),
           ],
           if (q.comment != null) ...[
             const SizedBox(height: 10),

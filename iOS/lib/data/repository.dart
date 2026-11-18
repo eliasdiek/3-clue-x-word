@@ -16,6 +16,14 @@ class OpeningData {
   final String? message;
 }
 
+/// A finished puzzle and its score.
+class FinishedGame {
+  const FinishedGame({required this.game, required this.entry});
+
+  final GameState game;
+  final HistoryEntry entry;
+}
+
 /// Decides what to play and keeps progress. Works offline when the puzzle
 /// in progress (or the next one) was downloaded earlier.
 class GameRepository {
@@ -113,6 +121,25 @@ class GameRepository {
     if (number > storage.lastFinished) await storage.setLastFinished(number);
     await storage.deleteGame(number);
     await storage.setCurrentPuzzle(null);
+    await storage.setUnclosedResult({'game': game.toJson(), 'entry': entry.toJson()});
     return entry;
   }
+
+  /// The finished puzzle whose result the player hasn't closed yet (they
+  /// left the app during the ad or on the Completed page), if any.
+  FinishedGame? unclosedResult() {
+    final json = storage.unclosedResult;
+    if (json == null) return null;
+    try {
+      final entry = HistoryEntry.fromJson(json['entry'] as Map<String, dynamic>);
+      final puzzleJson = storage.puzzle(entry.puzzleNumber);
+      final game = puzzleJson == null ? null : GameState.fromJson(Puzzle.fromJson(puzzleJson), json['game'] as Map<String, dynamic>);
+      return game == null ? null : FinishedGame(game: game, entry: entry);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// "Next puzzle": the result has been seen.
+  Future<void> closeResult() => storage.setUnclosedResult(null);
 }

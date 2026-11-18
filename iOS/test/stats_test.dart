@@ -49,4 +49,12 @@ void main() {
     expect(ScoreStats.estimateBetterThan(50), 78);
     expect(ScoreStats.estimateBetterThan(100), 99);
   });
+
+  test('the players line changes with the day of the week', () {
+    expect(ScoreStats.betterThanLine(94, DateTime.sunday), ('Better than ', '94%', ' of players'));
+    expect(ScoreStats.betterThanLine(94, DateTime.tuesday), ('You are in the top ', '6%', ' of players'));
+    expect(ScoreStats.betterThanLine(94, DateTime.thursday).$1, isEmpty);
+    final lines = {for (var d = 1; d <= 7; d++) ScoreStats.betterThanLine(94, d)};
+    expect(lines, hasLength(7));
+  });
 }

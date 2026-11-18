@@ -56,6 +56,22 @@ class ScoreStats {
   /// 50% beats 78%, 80% beats 95%.
   static int estimateBetterThan(int averagePercent) => (50 + averagePercent * 0.56).round().clamp(50, 99);
 
+  /// The "better than" line, worded differently each day of the week
+  /// (John's wording). Returns the text before the bold figure, the bold
+  /// figure, and the text after it. [weekday] is DateTime.weekday (1 = Monday).
+  static (String, String, String) betterThanLine(int betterThan, int weekday) {
+    final n = '$betterThan%';
+    return switch (weekday) {
+      DateTime.monday => ('You beat ', n, ' of other players'),
+      DateTime.tuesday => ('You are in the top ', '${100 - betterThan}%', ' of players'),
+      DateTime.wednesday => ('That’s ahead of ', n, ' of players'),
+      DateTime.thursday => ('', n, ' of players wish they were as good as you'),
+      DateTime.friday => ('Wow! Topped ', n, ' of players'),
+      DateTime.saturday => ('You left ', n, ' of players in your wake'),
+      _ => ('Better than ', n, ' of players'),
+    };
+  }
+
   static int _average(Iterable<int> values) {
     final list = values.toList();
     return list.isEmpty ? 0 : (list.reduce((a, b) => a + b) / list.length).round();

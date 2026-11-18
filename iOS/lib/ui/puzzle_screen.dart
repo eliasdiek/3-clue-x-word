@@ -31,6 +31,7 @@ class _PuzzleScreenState extends State<PuzzleScreen> with WidgetsBindingObserver
   late final GameController controller = GameController(game: widget.game, repository: widget.repository);
   final focusNode = FocusNode();
   bool _leaving = false;
+  int _spokenId = 0;
 
   @override
   void initState() {
@@ -51,6 +52,12 @@ class _PuzzleScreenState extends State<PuzzleScreen> with WidgetsBindingObserver
   }
 
   void _onChange() {
+    // A new compliment: the voice says it as the bubble appears.
+    final compliment = controller.compliment;
+    if (controller.complimentId != _spokenId && compliment != null) {
+      _spokenId = controller.complimentId;
+      if (widget.repository.storage.voiceOn) Sounds.instance.say(compliment);
+    }
     if (controller.finished && !_leaving) {
       _leaving = true;
       // The specification: on finishing, go straight to an ad, then the score.
@@ -363,7 +370,7 @@ class _Compliment extends StatelessWidget {
   }
 }
 
-/// Settings: background music and key click on/off (remembered).
+/// Settings: background music, key click and voice on/off (remembered).
 class _SoundSwitches extends StatefulWidget {
   const _SoundSwitches({required this.storage});
 
@@ -397,6 +404,18 @@ class _SoundSwitchesState extends State<_SoundSwitches> {
           value: storage.clickOn,
           onChanged: (on) async {
             await storage.setClickOn(on);
+            setState(() {});
+          },
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(Icons.record_voice_over_rounded, color: AppColors.brand),
+          title: const Text('Voice'),
+          subtitle: const Text('Says "Amazing!", "Well done!" …'),
+          value: storage.voiceOn,
+          onChanged: (on) async {
+            await storage.setVoiceOn(on);
+            if (on) Sounds.instance.say('Well done!');
             setState(() {});
           },
         ),

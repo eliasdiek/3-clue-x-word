@@ -29,7 +29,8 @@ class ClueBar extends StatelessWidget {
   final VoidCallback onPrevious;
   final VoidCallback onNext;
 
-  static const clueHeight = 84.0;
+  static const clueHeight = 100.0;
+  static const tabHeight = 40.0;
 
   String? _neighbourLabel(int step) {
     final words = game.puzzle.words;
@@ -90,8 +91,8 @@ class ClueBar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          // A fixed height (room for about 60 characters), so the grid above
+          const SizedBox(height: 6),
+          // A fixed height (room for about 70 characters), so the grid above
           // never changes size from one clue to the next.
           SizedBox(
             height: ClueBar.clueHeight,
@@ -108,7 +109,7 @@ class ClueBar extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.fill(game.solved[game.currentWord] ? null : game.clueLevel).withValues(alpha: 0.35),
+                      color: AppColors.fill(game.clueLevel).withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.line),
                     ),
@@ -125,7 +126,7 @@ class ClueBar extends StatelessWidget {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 18, 10, 6),
+                          padding: const EdgeInsets.fromLTRB(8, 17, 8, 4),
                           child: Center(
                             child: Semantics(
                               liveRegion: true,
@@ -192,7 +193,7 @@ class _ClueTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Container(
-            height: 46,
+            height: ClueBar.tabHeight,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: selected ? textColor : Colors.transparent, width: 2.5),
@@ -202,7 +203,7 @@ class _ClueTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // The "sun" marks the clue being viewed.
-                if (selected) Icon(Icons.wb_sunny_rounded, size: 14, color: textColor) else const SizedBox(height: 14),
+                if (selected) Icon(Icons.wb_sunny_rounded, size: 12, color: textColor) else const SizedBox(height: 12),
                 FittedBox(
                   child: Text(
                     label,
@@ -240,8 +241,8 @@ class _IconBox extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: SizedBox(
-            width: 46,
-            height: 46,
+            width: ClueBar.tabHeight + 4,
+            height: ClueBar.tabHeight,
             child: Icon(icon, size: 28, color: onTap == null ? AppColors.inkMuted.withValues(alpha: 0.4) : AppColors.brand),
           ),
         ),
@@ -303,34 +304,50 @@ class FittingText extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final scaler = MediaQuery.textScalerOf(context);
+        // Measure with exactly what will be drawn: the theme's font and
+        // letter spacing as well as [style]. (Measuring [style] alone was
+        // narrower than the real text on iPhone, so a last word got cut off.)
+        final base = DefaultTextStyle.of(context).style.merge(style);
         final words = text.split(RegExp(r'\s+'));
         var size = maxFontSize;
         for (; size > minFontSize; size -= 0.5) {
-          if (_fits(words, style.copyWith(fontSize: size), scaler, constraints)) break;
+          if (_fits(words, base.copyWith(fontSize: size), scaler, constraints)) break;
         }
         return Text(
           text,
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
-          maxLines: 4,
-          style: style.copyWith(fontSize: size),
+          maxLines: maxLines,
+          style: base.copyWith(fontSize: size),
         );
       },
     );
   }
 
+  static const maxLines = 4;
+
+  /// Room kept spare so small differences in how the phone draws text
+  /// can't push the last word out.
+  static const _slack = 4.0;
+
   bool _fits(List<String> words, TextStyle style, TextScaler scaler, BoxConstraints box) {
-    TextPainter painter(String s) =>
-        TextPainter(text: TextSpan(text: s, style: style), textDirection: TextDirection.ltr, textScaler: scaler, textAlign: TextAlign.center);
+    final width = box.maxWidth - _slack;
+    TextPainter painter(String s, {int? lines}) => TextPainter(
+          text: TextSpan(text: s, style: style),
+          textDirection: TextDirection.ltr,
+          textScaler: scaler,
+          textAlign: TextAlign.center,
+          maxLines: lines,
+        );
     // No single word may be wider than the box (that would split it).
     for (final word in words) {
       final p = painter(word)..layout();
-      final tooWide = p.width > box.maxWidth;
+      final tooWide = p.width > width;
       p.dispose();
       if (tooWide) return false;
     }
-    final all = painter(text)..layout(maxWidth: box.maxWidth);
-    final fits = all.height <= box.maxHeight;
+    final all = painter(text, lines: maxLines)..layout(maxWidth: width);
+    final fits = !all.didExceedMaxLines && all.height <= box.maxHeight - _slack;
     all.dispose();
     return fits;
   }
